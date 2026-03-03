@@ -7,6 +7,53 @@ Recent changes to the Specify CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.18] - 2026-03-02
+
+### Added
+
+- **User Input Support in Context Command**: Enhanced `/speckit.context` workflow to accept optional user directives for guided analysis
+  - Added `$ARGUMENTS` parameter support (matching `/speckit.constitution` pattern)
+  - User can specify focus areas, terminology preferences, and architectural priorities
+  - Remains fully optional - performs automated reverse-engineering when no input provided
+  - **User Input Integration**:
+    - Emphasizes user-mentioned components, patterns, or concerns throughout analysis
+    - Uses domain-specific terms provided by user
+    - Highlights integration points, data flows, or design decisions specified by user
+    - Includes user-mentioned components prominently in generated Mermaid diagrams
+    - Provides additional detail in sections relevant to user directives
+  - **Benefits**:
+    - Enables targeted documentation for specific architectural concerns
+    - Maintains established business terminology and domain language
+    - Focuses analysis on areas most relevant to current development needs
+    - Improves documentation quality through human-AI collaboration
+
+- **Intelligent Merge for Existing project-context.md Files**: Transformed context generation from "regenerate" to "update and refine"
+  - **Pre-Analysis Phase (Section 2.0)**: Added preservation logic that executes before overwriting existing files
+    - Reads existing `project-context.md` before creating backup
+    - Extracts content for intelligent merging:
+      - **Section 17 (Open Questions)**: Preserves existing questions, merges with newly discovered ones
+      - **Section 18 (Guardrails & Non-Goals)**: Preserves unless contradicted by current code
+      - **Section 20 (Changelog)**: Extracts all previous entries (never replaces, always appends)
+      - **Terminology & Domain Language**: Notes established terms, acronyms, naming conventions
+      - **Manual Clarifications**: Identifies hand-written notes, business context, editorial additions
+    - Uses preserved content as analysis context to maintain consistency
+    - Compares previous architectural descriptions to current source code to identify evolution
+  - **Conflict Resolution Rules**:
+    - **Code wins**: Fresh source code analysis overrides outdated architectural descriptions
+    - **Manual wins**: Hand-written business context preserved unless directly contradicted by code
+    - **Intelligent merge**: Combines lists, removes resolved questions, marks deprecated dependencies
+    - **Document evolution**: Adds changelog entry noting significant changes between versions
+  - **Writing Phase Updates**:
+    - Phase 5 explicitly applies merge logic to sections 17, 18, and 20
+    - Changelog template updated to note preservation requirement with example
+    - Pre-write phase references completed pre-analysis
+  - **Benefits**:
+    - Preserves institutional knowledge and manual refinements across regenerations
+    - Maintains business context that cannot be inferred from code alone
+    - Documents architectural evolution over time in changelog
+    - Prevents loss of carefully crafted guardrails and open questions
+    - Makes documentation a living artifact that improves with each update
+
 ## [0.1.17] - 2026-03-02
 
 ### Added

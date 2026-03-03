@@ -15,6 +15,28 @@ handoffs:
 
 ---
 
+## User Input
+
+```text
+$ARGUMENTS
+```
+
+You **MUST** consider the user input before proceeding (if not empty).
+
+### User Input Integration
+
+When user input is provided, incorporate it throughout the analysis:
+
+- **Focus areas**: Emphasize components, patterns, or concerns mentioned by the user
+- **Terminology**: Use domain-specific terms provided by the user
+- **Architectural priorities**: Highlight integration points, data flows, or design decisions specified by the user
+- **Section emphasis**: Provide additional detail in sections relevant to user directives
+- **Diagram content**: Include user-mentioned components prominently in generated diagrams
+
+User input is **optional**. When absent, perform fully automated reverse-engineering.
+
+---
+
 ## 0) Purpose & Contract
 This workflow operates in a brownfield environment. The objective is to collect
 architectural, structural, and operational knowledge from each repository in the
@@ -71,11 +93,48 @@ If **no source code** is detected, **skip the repository**.
 
 ## 2) Per‑Repo Execution Flow
 
+**User Input Consideration**: If user input was provided, keep it in context throughout all
+subsections below. Prioritize user-specified concerns, use provided terminology, and emphasize
+user-mentioned components in analysis and diagrams.
+
+### 2.0 Pre-Analysis (Existing File Consideration)
+
+**If `project-context.md` exists and user approved overwrite:**
+
+1. **Read the existing file** before creating backup
+2. **Extract content for preservation/merge:**
+   - **Section 17 (Open Questions)**: Preserve existing questions; merge with newly discovered ones
+   - **Section 18 (Guardrails & Non-Goals)**: Preserve unless contradicted by current code analysis
+   - **Section 20 (Changelog)**: Extract all previous entries to append (do not replace)
+   - **Terminology & Domain Language**: Note established terms, acronyms, and naming conventions
+   - **Manual Clarifications**: Identify hand-written notes, business context, or editorial additions
+     (detectable by non-standard formatting, explicit markers like `<!-- manual -->`, or prose style)
+
+3. **Use as analysis context:**
+   - Maintain established terminology throughout new analysis
+   - Compare previous architectural descriptions to current source code
+   - Identify and note significant changes (architecture evolution, new integrations, tech stack changes)
+   - Preserve business context that cannot be inferred from code alone
+
+**Conflict Resolution Rules:**
+
+- **Code wins**: Current source code analysis takes precedence over outdated architectural descriptions
+- **Manual wins**: Hand-written clarifications, business context, or explicit guardrails are preserved
+  unless directly contradicted by code
+- **Merge intelligently**:
+  - Open Questions: combine old + new, remove resolved questions if evidence in code
+  - Dependencies: merge lists, mark removed dependencies as deprecated in changelog
+  - Guardrails: preserve existing unless code proves them obsolete
+- **Document evolution**: Add changelog entry noting significant changes between versions
+
+**If no existing file:** Skip to Source Discovery (section 2.1).
+
 ### 2.1 Source Discovery
 Identify characteristics of the repository based on its structure, including:
 - Languages and frameworks detected
 - Project layout and modules
 - Build systems and configurations
+- **User-specified focus areas** (if provided)
 
 ### 2.2 Architectural Understanding
 Document:
@@ -83,6 +142,7 @@ Document:
 - Logical components, layers, and interactions
 - Relevant integrations
 - Deployment or hosting context if identifiable
+- **User-highlighted architectural concerns** (if provided)
 
 ### 2.3 Diagram Generation
 **Generate actual Mermaid diagrams** to illustrate architecture and workflows.
@@ -99,6 +159,7 @@ Diagram requirements:
 - Use consistent naming conventions
 - Wrap in proper Mermaid code blocks: ` ```mermaid ... ``` `
 - **Generate diagrams based on actual repository analysis**, not generic templates
+- **Emphasize user-mentioned components** if user input specified particular flows or integrations
 
 Example system context diagram:
 ```mermaid
@@ -200,6 +261,7 @@ To ensure reliability and prevent context overflow, write the file incrementally
 
 **Pre-Write Phase:**
 1. If `project-context.md` exists and user approved overwrite:
+   - **Pre-analysis reading already completed** (section 2.0) - preserved content is in context
    - Create backup: `project-context.md.backup.YYYYMMDD_HHMMSS` (use current timestamp)
    - Delete the original `project-context.md`
    - Create new empty `project-context.md`
@@ -212,12 +274,16 @@ Write content in **5 sequential phases** (do not attempt to write all sections a
 - **Phase 3**: Write sections 9-12 (Local Development through Security)
 - **Phase 4**: Write sections 13-16 (Feature Integration through Files Referenced)
 - **Phase 5**: Write sections 17-20 (Open Questions through Changelog) + Appendix
+  - **Section 17**: Merge preserved questions with newly discovered ones
+  - **Section 18**: Incorporate preserved guardrails unless contradicted
+  - **Section 20**: Append to preserved changelog entries with new version entry noting changes
 
 Each phase must:
 1. Generate content for assigned sections only
-2. Append to `project-context.md` using atomic write operation
-3. Verify write succeeded before proceeding to next phase
-4. If write fails, stop and report error with phase number
+2. **Apply merge rules** for sections 17, 18, and 20 if existing content was extracted
+3. Append to `project-context.md` using atomic write operation
+4. Verify write succeeded before proceeding to next phase
+5. If write fails, stop and report error with phase number
 
 **Post-Write Phase:**
 1. Verify complete file contains all 21 sections (0-20)
@@ -374,8 +440,10 @@ How to add a new feature.
 
 ---
 
-## Appendix: Changelog
+## 20) Changelog
 - <YYYY‑MM‑DD> — Initial generation
+
+**Note**: When updating existing `project-context.md`, preserve previous changelog entries and add new entry describing significant changes (e.g., "2026-03-02 — Updated architecture diagrams, added new integration with XYZ service, resolved 3 open questions").
 ````
 
 ---
