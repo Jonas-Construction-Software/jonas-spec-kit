@@ -7,6 +7,18 @@ Recent changes to the Specify CLI and templates are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.19] - 2024-03-02
+
+### Changed
+
+- **Version Sync**: Aligned version with production repository (`jonas-spec-kit`)
+  - Synchronized version numbering between `jonas-spec-kit-dev` and `jonas-spec-kit` repositories
+  - Both repositories now use v0.1.19 as the current version
+
+### Fixed
+
+- Version consistency between development and production repositories
+
 ## [0.1.18] - 2026-03-02
 
 ### Added
