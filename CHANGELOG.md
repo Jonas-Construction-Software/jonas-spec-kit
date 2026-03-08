@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- upstream merge from Spec Kit main branch (release v0.1.19) 
 - fix: use GH_TOKEN for GitHub CLI in release-trigger workflow
 - fix: use GITHUB_TOKEN instead of RELEASE_PAT in release-trigger workflow
 - test: fix download_and_extract_template mock return values
