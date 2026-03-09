@@ -28,7 +28,7 @@ jobs:
         id: check_release
         run: |
           chmod +x .github/workflows/scripts/check-release-exists.sh
-          .github/workflows/scripts/check-release-exists.sh ${{ steps.get_tag.outputs.tag }}
+          .github/workflows/scripts/check-release-exists.sh ${{ steps.version.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -36,7 +36,7 @@ jobs:
         if: steps.check_release.outputs.exists == 'false'
         run: |
           chmod +x .github/workflows/scripts/create-release-packages.sh
-          .github/workflows/scripts/create-release-packages.sh ${{ steps.get_tag.outputs.tag }}
+          .github/workflows/scripts/create-release-packages.sh ${{ steps.version.outputs.tag }}
 
       - name: Generate release notes
         if: steps.check_release.outputs.exists == 'false'
@@ -44,18 +44,18 @@ jobs:
         run: |
           chmod +x .github/workflows/scripts/generate-release-notes.sh
           # Get the previous tag for changelog generation
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 ${{ steps.get_tag.outputs.tag }}^ 2>/dev/null || echo "")
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 ${{ steps.version.outputs.tag }}^ 2>/dev/null || echo "")
           # Default to v0.0.0 if no previous tag is found (e.g., first release)
           if [ -z "$PREVIOUS_TAG" ]; then
             PREVIOUS_TAG="v0.0.0"
           fi
-          .github/workflows/scripts/generate-release-notes.sh ${{ steps.get_tag.outputs.tag }} "$PREVIOUS_TAG"
+          .github/workflows/scripts/generate-release-notes.sh ${{ steps.version.outputs.tag }} "$PREVIOUS_TAG"
 
       - name: Create GitHub Release
         if: steps.check_release.outputs.exists == 'false'
         run: |
           chmod +x .github/workflows/scripts/create-github-release.sh
-          .github/workflows/scripts/create-github-release.sh ${{ steps.get_tag.outputs.tag }}
+          .github/workflows/scripts/create-github-release.sh ${{ steps.version.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
