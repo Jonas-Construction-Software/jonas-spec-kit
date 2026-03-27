@@ -42,15 +42,9 @@
 - docs: Document dual-catalog system for extensions (#1689)
 - Fix version command in documentation (#1685)
 
-## [0.1.21] - 2026-03-26
+### Upstream Changes (v0.2.0 – v0.4.2)
 
-### Changed
-
-- upstream merge from Spec Kit main branch (release v0.4.2)
-
-## 0.4.2 (upstream) - 2026-03-25
-
-### Changed
+#### 0.4.2 (upstream) - 2026-03-25
 
 - feat: Auto-register ai-skills for extensions whenever applicable (#1840)
 - docs: add manual testing guide for slash command validation (#1955)
@@ -62,18 +56,14 @@
 - Add Community Friends section to README (#1956)
 - docs: add Community Friends section with Spec Kit Assistant VS Code extension (#1944)
 
-## 0.4.1 (upstream) - 2026-03-24
-
-### Changed
+#### 0.4.1 (upstream) - 2026-03-24
 
 - Add checkpoint extension (#1947)
 - fix(scripts): prioritize .specify over git for repo root detection (#1933)
 - docs: add AIDE extension demo to community projects (#1943)
 - fix(templates): add missing Assumptions section to spec template (#1939)
 
-## 0.4.0 (upstream) - 2026-03-23
-
-### Changed
+#### 0.4.0 (upstream) - 2026-03-23
 
 - fix(cli): add allow_unicode=True and encoding="utf-8" to YAML I/O (#1936)
 - fix(codex): native skills fallback refresh + legacy prompt suppression (#1930)
@@ -87,9 +77,7 @@
 - Add support for Junie (#1831)
 - feat: migrate Codex/agy init to native skills workflow (#1906)
 
-## 0.3.2 (upstream) - 2026-03-19
-
-### Changed
+#### 0.3.2 (upstream) - 2026-03-19
 
 - Add conduct extension to community catalog (#1908)
 - feat(extensions): add verify-tasks extension to community catalog (#1871)
@@ -107,9 +95,7 @@
 - Feature/spec kit add pi coding agent pullrequest (#1853)
 - feat: register spec-kit-learn extension (#1883)
 
-## 0.3.1 (upstream) - 2026-03-17
-
-### Changed
+#### 0.3.1 (upstream) - 2026-03-17
 
 - docs: add greenfield Spring Boot pirate-speak preset demo to README (#1878)
 - fix(ai-skills): exclude non-speckit copilot agent markdown from skills (#1867)
@@ -126,9 +112,7 @@
 - feat(extensions): add Archive and Reconcile extensions to community catalog (#1844)
 - feat: Add DocGuard CDD enforcement extension to community catalog (#1838)
 
-## 0.3.0 (upstream) - 2026-03-13
-
-### Changed
+#### 0.3.0 (upstream) - 2026-03-13
 
 - feat(presets): Pluggable preset system with catalog, resolver, and skills propagation (#1787)
 - fix: match 'Last updated' timestamp with or without bold markers (#1836)
@@ -141,9 +125,7 @@
 - feat(extensions): Quality of life improvements for RFC-aligned catalog integration (#1776)
 - Add Java brownfield walkthrough to community walkthroughs (#1820)
 
-## 0.2.1 (upstream) - 2026-03-11
-
-### Changed
+#### 0.2.1 (upstream) - 2026-03-11
 
 - Added February 2026 newsletter (#1812)
 - feat: add Kimi Code CLI agent support (#1790)
@@ -153,9 +135,7 @@
 - feat(extensions): support .extensionignore to exclude files during install (#1781)
 - feat: add Codex support for extension command registration (#1767)
 
-## 0.2.0 (upstream) - 2026-03-09
-
-### Changed
+#### 0.2.0 (upstream) - 2026-03-09
 
 - fix: sync agent list comments with actual supported agents (#1785)
 - feat(extensions): support multiple active catalogs simultaneously (#1720)
