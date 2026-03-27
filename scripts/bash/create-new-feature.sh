@@ -7,6 +7,7 @@ JSON_MODE=false
 SHORT_NAME=""
 BRANCH_NUMBER=""
 CUSTOM_PREFIX=""
+USE_TIMESTAMP=false
 ARGS=()
 i=1
 while [ $i -le $# ]; do
@@ -68,9 +69,12 @@ while [ $i -le $# ]; do
             fi
             CUSTOM_PREFIX="$next_arg"
             ;;
+        --timestamp)
+            USE_TIMESTAMP=true
+            ;;
         --help|-h) 
-            echo "Usage: $0 --description <desc> [--json] [--short-name <name>] [--number N] [--custom-prefix <prefix>]"
-            echo "   OR: $0 [--json] [--short-name <name>] [--number N] [--custom-prefix <prefix>] <feature_description>"
+            echo "Usage: $0 --description <desc> [--json] [--short-name <name>] [--number N] [--custom-prefix <prefix>] [--timestamp]"
+            echo "   OR: $0 [--json] [--short-name <name>] [--number N] [--custom-prefix <prefix>] [--timestamp] <feature_description>"
             echo ""
             echo "Options:"
             echo "  --description <desc>    Feature description (recommended when using switches)"
@@ -78,6 +82,7 @@ while [ $i -le $# ]; do
             echo "  --short-name <name>     Provide a custom short name (2-4 words) for the branch"
             echo "  --number N              Specify branch number manually (overrides auto-detection)"
             echo "  --custom-prefix <prefix> Use Jira dev task key as prefix (e.g., FT-53, DEV-142)"
+            echo "  --timestamp             Use YYYYMMDD-HHMMSS timestamp prefix instead of sequential number"
             echo "  --help, -h              Show this help message"
             echo ""
             echo "Examples:"
@@ -86,8 +91,8 @@ while [ $i -le $# ]; do
             echo "  $0 'Add user authentication system' --short-name 'user-auth'"
             exit 0
             ;;
-        *) 
-            ARGS+=("$arg") 
+        *)
+            ARGS+=("$arg")
             ;;
     esac
     i=$((i + 1))
@@ -116,19 +121,6 @@ if [ -z "$FEATURE_DESCRIPTION" ]; then
     exit 1
 fi
 
-# Function to find the repository root by searching for existing project markers
-find_repo_root() {
-    local dir="$1"
-    while [ "$dir" != "/" ]; do
-        if [ -d "$dir/.git" ] || [ -d "$dir/.specify" ]; then
-            echo "$dir"
-            return 0
-        fi
-        dir="$(dirname "$dir")"
-    done
-    return 1
-}
-
 # Function to get highest number from specs directory
 get_highest_from_specs() {
     local specs_dir="$1"
@@ -138,10 +130,13 @@ get_highest_from_specs() {
         for dir in "$specs_dir"/*; do
             [ -d "$dir" ] || continue
             dirname=$(basename "$dir")
-            number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
-            number=$((10#$number))
-            if [ "$number" -gt "$highest" ]; then
-                highest=$number
+            # Only match sequential prefixes (###-*), skip timestamp dirs
+            if echo "$dirname" | grep -q '^[0-9]\{3\}-'; then
+                number=$(echo "$dirname" | grep -o '^[0-9]\{3\}')
+                number=$((10#$number))
+                if [ "$number" -gt "$highest" ]; then
+                    highest=$number
+                fi
             fi
         done
     fi
@@ -180,7 +175,7 @@ check_existing_branches() {
     local specs_dir="$1"
 
     # Fetch all remotes to get latest branch info (suppress errors if no remotes)
-    git fetch --all --prune 2>/dev/null || true
+    git fetch --all --prune >/dev/null 2>&1 || true
 
     # Get highest number from ALL branches (not just matching short name)
     local highest_branch=$(get_highest_from_branches)
@@ -204,20 +199,16 @@ clean_branch_name() {
     echo "$name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-//' | sed 's/-$//'
 }
 
-# Resolve repository root. Prefer git information when available, but fall back
-# to searching for repository markers so the workflow still functions in repositories that
-# were initialised with --no-git.
+# Resolve repository root using common.sh functions which prioritize .specify over git
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
 
-if git rev-parse --show-toplevel >/dev/null 2>&1; then
-    REPO_ROOT=$(git rev-parse --show-toplevel)
+REPO_ROOT=$(get_repo_root)
+
+# Check if git is available at this repo root (not a parent)
+if has_git; then
     HAS_GIT=true
 else
-    REPO_ROOT="$(find_repo_root "$SCRIPT_DIR")"
-    if [ -z "$REPO_ROOT" ]; then
-        echo "Error: Could not determine repository root. Please run this script from within the repository." >&2
-        exit 1
-    fi
     HAS_GIT=false
 fi
 
@@ -292,6 +283,12 @@ if [ -n "$CUSTOM_PREFIX" ]; then
         exit 1
     fi
     FEATURE_NUM="$CUSTOM_PREFIX"
+elif [ "$USE_TIMESTAMP" = true ]; then
+    # Warn if --number was also provided (timestamp takes precedence)
+    if [ -n "$BRANCH_NUMBER" ]; then
+        >&2 echo "Warning: --number is ignored when --timestamp is used"
+    fi
+    FEATURE_NUM=$(date +"%Y%m%d-%H%M%S")
 elif [ -z "$BRANCH_NUMBER" ]; then
     if [ "$HAS_GIT" = true ]; then
         # Check existing branches on remotes
@@ -314,8 +311,9 @@ BRANCH_NAME="${FEATURE_NUM}-${BRANCH_SUFFIX}"
 MAX_BRANCH_LENGTH=244
 if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
     # Calculate how much we need to trim from suffix
-    # Account for: feature number (3) + hyphen (1) = 4 chars
-    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - 4))
+    # Account for prefix length: timestamp (15) + hyphen (1) = 16, or sequential (3) + hyphen (1) = 4
+    PREFIX_LENGTH=$(( ${#FEATURE_NUM} + 1 ))
+    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - PREFIX_LENGTH))
     
     # Truncate suffix at word boundary if possible
     TRUNCATED_SUFFIX=$(echo "$BRANCH_SUFFIX" | cut -c1-$MAX_SUFFIX_LENGTH)
@@ -334,7 +332,11 @@ if [ "$HAS_GIT" = true ]; then
     if ! git checkout -b "$BRANCH_NAME" 2>/dev/null; then
         # Check if branch already exists
         if git branch --list "$BRANCH_NAME" | grep -q .; then
-            >&2 echo "Error: Branch '$BRANCH_NAME' already exists. Please use a different feature name or specify a different number with --number."
+            if [ "$USE_TIMESTAMP" = true ]; then
+                >&2 echo "Error: Branch '$BRANCH_NAME' already exists. Rerun to get a new timestamp or use a different --short-name."
+            else
+                >&2 echo "Error: Branch '$BRANCH_NAME' already exists. Please use a different feature name or specify a different number with --number."
+            fi
             exit 1
         else
             >&2 echo "Error: Failed to create git branch '$BRANCH_NAME'. Please check your git configuration and try again."
@@ -348,18 +350,31 @@ fi
 FEATURE_DIR="$SPECS_DIR/$BRANCH_NAME"
 mkdir -p "$FEATURE_DIR"
 
-TEMPLATE="$REPO_ROOT/.specify/templates/spec-template.md"
+TEMPLATE=$(resolve_template "spec-template" "$REPO_ROOT") || true
 SPEC_FILE="$FEATURE_DIR/spec.md"
-if [ -f "$TEMPLATE" ]; then cp "$TEMPLATE" "$SPEC_FILE"; else touch "$SPEC_FILE"; fi
+if [ -n "$TEMPLATE" ] && [ -f "$TEMPLATE" ]; then
+    cp "$TEMPLATE" "$SPEC_FILE"
+else
+    echo "Warning: Spec template not found; created empty spec file" >&2
+    touch "$SPEC_FILE"
+fi
 
-# Set the SPECIFY_FEATURE environment variable for the current session
-export SPECIFY_FEATURE="$BRANCH_NAME"
+# Inform the user how to persist the feature variable in their own shell
+printf '# To persist: export SPECIFY_FEATURE=%q\n' "$BRANCH_NAME" >&2
 
 if $JSON_MODE; then
-    printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s","FEATURE_NUM":"%s"}\n' "$BRANCH_NAME" "$SPEC_FILE" "$FEATURE_NUM"
+    if command -v jq >/dev/null 2>&1; then
+        jq -cn \
+            --arg branch_name "$BRANCH_NAME" \
+            --arg spec_file "$SPEC_FILE" \
+            --arg feature_num "$FEATURE_NUM" \
+            '{BRANCH_NAME:$branch_name,SPEC_FILE:$spec_file,FEATURE_NUM:$feature_num}'
+    else
+        printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s","FEATURE_NUM":"%s"}\n' "$(json_escape "$BRANCH_NAME")" "$(json_escape "$SPEC_FILE")" "$(json_escape "$FEATURE_NUM")"
+    fi
 else
     echo "BRANCH_NAME: $BRANCH_NAME"
     echo "SPEC_FILE: $SPEC_FILE"
     echo "FEATURE_NUM: $FEATURE_NUM"
-    echo "SPECIFY_FEATURE environment variable set to: $BRANCH_NAME"
+    printf '# To persist in your shell: export SPECIFY_FEATURE=%q\n' "$BRANCH_NAME"
 fi
