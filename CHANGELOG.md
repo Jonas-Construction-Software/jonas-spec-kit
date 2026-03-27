@@ -6,6 +6,12 @@
 
 ### Changed
 
+- chore: sync from dev repo - bump to v0.1.21 (#7)
+
+## [0.1.21] - 2026-03-27
+
+### Changed
+
 - fix version detection with release trigger
 - Feature/upstream sync main 2026 03 25 (#10)
 - Update CHANGELOG.md
