@@ -5,10 +5,11 @@ param(
     [string]$Description,
     [switch]$Json,
     [string]$ShortName,
+    [Parameter()]
     [int]$Number = 0,
     [string]$CustomPrefix,
     [switch]$Help,
-    [Parameter(ValueFromRemainingArguments = $true)]
+    [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
     [string[]]$FeatureDescription
 )
 $ErrorActionPreference = 'Stop'
@@ -59,37 +60,13 @@ if ([string]::IsNullOrWhiteSpace($featureDesc)) {
     exit 1
 }
 
-# Resolve repository root. Prefer git information when available, but fall back
-# to searching for repository markers so the workflow still functions in repositories that
-# were initialized with --no-git.
-function Find-RepositoryRoot {
-    param(
-        [string]$StartDir,
-        [string[]]$Markers = @('.git', '.specify')
-    )
-    $current = Resolve-Path $StartDir
-    while ($true) {
-        foreach ($marker in $Markers) {
-            if (Test-Path (Join-Path $current $marker)) {
-                return $current
-            }
-        }
-        $parent = Split-Path $current -Parent
-        if ($parent -eq $current) {
-            # Reached filesystem root without finding markers
-            return $null
-        }
-        $current = $parent
-    }
-}
-
 function Get-HighestNumberFromSpecs {
     param([string]$SpecsDir)
     
     $highest = 0
     if (Test-Path $SpecsDir) {
         Get-ChildItem -Path $SpecsDir -Directory | ForEach-Object {
-            if ($_.Name -match '^(\d+)') {
+            if ($_.Name -match '^(\d{3})-') {
                 $num = [int]$matches[1]
                 if ($num -gt $highest) { $highest = $num }
             }
@@ -110,7 +87,7 @@ function Get-HighestNumberFromBranches {
                 $cleanBranch = $branch.Trim() -replace '^\*?\s+', '' -replace '^remotes/[^/]+/', ''
                 
                 # Extract feature number if branch matches pattern ###-*
-                if ($cleanBranch -match '^(\d+)-') {
+                if ($cleanBranch -match '^(\d{3})-') {
                     $num = [int]$matches[1]
                     if ($num -gt $highest) { $highest = $num }
                 }
@@ -153,23 +130,14 @@ function ConvertTo-CleanBranchName {
     
     return $Name.ToLower() -replace '[^a-z0-9]', '-' -replace '-{2,}', '-' -replace '^-', '' -replace '-$', ''
 }
-$fallbackRoot = (Find-RepositoryRoot -StartDir $PSScriptRoot)
-if (-not $fallbackRoot) {
-    Write-Error "Error: Could not determine repository root. Please run this script from within the repository."
-    exit 1
-}
+# Load common functions (includes Get-RepoRoot, Test-HasGit, Resolve-Template)
+. "$PSScriptRoot/common.ps1"
 
-try {
-    $repoRoot = git rev-parse --show-toplevel 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        $hasGit = $true
-    } else {
-        throw "Git not available"
-    }
-} catch {
-    $repoRoot = $fallbackRoot
-    $hasGit = $false
-}
+# Use common.ps1 functions which prioritize .specify over git
+$repoRoot = Get-RepoRoot
+
+# Check if git is available at this repo root (not a parent)
+$hasGit = Test-HasGit
 
 Set-Location $repoRoot
 
@@ -258,8 +226,9 @@ $branchName = "$featureNum-$branchSuffix"
 $maxBranchLength = 244
 if ($branchName.Length -gt $maxBranchLength) {
     # Calculate how much we need to trim from suffix
-    # Account for: feature number (3) + hyphen (1) = 4 chars
-    $maxSuffixLength = $maxBranchLength - 4
+    # Account for prefix length: timestamp (15) + hyphen (1) = 16, or sequential (3) + hyphen (1) = 4
+    $prefixLength = $featureNum.Length + 1
+    $maxSuffixLength = $maxBranchLength - $prefixLength
     
     # Truncate suffix
     $truncatedSuffix = $branchSuffix.Substring(0, [Math]::Min($branchSuffix.Length, $maxSuffixLength))
@@ -277,7 +246,7 @@ if ($branchName.Length -gt $maxBranchLength) {
 if ($hasGit) {
     $branchCreated = $false
     try {
-        git checkout -b $branchName 2>$null | Out-Null
+        git checkout -q -b $branchName 2>$null | Out-Null
         if ($LASTEXITCODE -eq 0) {
             $branchCreated = $true
         }
@@ -289,7 +258,11 @@ if ($hasGit) {
         # Check if branch already exists
         $existingBranch = git branch --list $branchName 2>$null
         if ($existingBranch) {
-            Write-Error "Error: Branch '$branchName' already exists. Please use a different feature name or specify a different number with -Number."
+            if ($Timestamp) {
+                Write-Error "Error: Branch '$branchName' already exists. Rerun to get a new timestamp or use a different -ShortName."
+            } else {
+                Write-Error "Error: Branch '$branchName' already exists. Please use a different feature name or specify a different number with -Number."
+            }
             exit 1
         } else {
             Write-Error "Error: Failed to create git branch '$branchName'. Please check your git configuration and try again."
@@ -303,9 +276,9 @@ if ($hasGit) {
 $featureDir = Join-Path $specsDir $branchName
 New-Item -ItemType Directory -Path $featureDir -Force | Out-Null
 
-$template = Join-Path $repoRoot '.specify/templates/spec-template.md'
+$template = Resolve-Template -TemplateName 'spec-template' -RepoRoot $repoRoot
 $specFile = Join-Path $featureDir 'spec.md'
-if (Test-Path $template) { 
+if ($template -and (Test-Path $template)) { 
     Copy-Item $template $specFile -Force 
 } else { 
     New-Item -ItemType File -Path $specFile | Out-Null 
