@@ -266,6 +266,7 @@ Before treating the user's message after `/speckit.specify` as the feature descr
     Wait for the result of the hook command before proceeding to the Outline.
     ```
 - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+- **After all pre-hooks have completed**: If any hook output contains `⛔ HOOK RESULT: STOP`, do NOT proceed to the Outline section. Report the hook's output to the user and exit the specify command. This allows hooks (e.g., gap analysis) to halt specification when the user explicitly chooses to stop.
 
 ## Outline
 
