@@ -27,6 +27,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 When user input is provided, incorporate it throughout the analysis:
 
+- **Repo targeting**: If user input is a bare repository name (e.g., `gitnexus-web`) or a relative path (e.g., `./gitnexus-web`), treat it as a **target filter** — process **only** that repository and skip all others. Record skipped repos in the summary under **"Skipped (Not targeted)"**. If no repo name is specified, process all eligible repositories as normal.
 - **Focus areas**: Emphasize components, patterns, or concerns mentioned by the user
 - **Terminology**: Use domain-specific terms provided by the user
 - **Architectural priorities**: Highlight integration points, data flows, or design decisions specified by the user
@@ -84,6 +85,7 @@ If **no source code** is detected, **skip the repository**.
 ---
 
 ## 1) Workspace Traversal
+0. **Check for repo target filter**: If `$ARGUMENTS` contains a repository name or relative path, apply it as a filter. After steps 1–2 below produce the eligible repository list, retain **only** the repository whose folder name or path matches the provided value (case-insensitive). Skip all non-matching repositories without prompting and record them in the final summary under **"Skipped (Not targeted)"**. If `$ARGUMENTS` is empty or contains no recognizable repo name/path, skip this step and process all eligible repositories.
 1. Detect all repositories in the workspace.
 2. Exclude repositories whose names match the pattern `*-document` (these contain planning artifacts, not source code).
 3. For each remaining repository, check for **source code presence**.
@@ -555,6 +557,7 @@ At the end of processing the workspace, output:
 Reverse‑engineering summary
 - Repositories scanned: <N>
 - Excluded (matches *-document): <K>
+- Skipped (Not targeted): <T>
 - Skipped (No source detected): <M>
 - Skipped (Overwrite not approved): <P>
 - Successfully written:
