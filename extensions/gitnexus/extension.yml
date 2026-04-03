@@ -43,6 +43,10 @@ provides:
       file: "commands/verify-changes.md"
       description: "Post-implementation verification: compare staged changes against expected task scope."
 
+    - name: "speckit.gitnexus.gap-analysis"
+      file: "commands/gap-analysis.md"
+      description: "Analyse a user story for completeness gaps and cross-reference requirements against the existing codebase."
+
     - name: "speckit.gitnexus.explore"
       file: "commands/explore.md"
       description: "Launch the GitNexus web explorer for interactive graph navigation."
@@ -54,6 +58,12 @@ provides:
       required: false
 
 hooks:
+  before_specify:
+    command: "speckit.gitnexus.gap-analysis"
+    optional: true
+    prompt: "Run GitNexus gap analysis on this user story before creating the spec?"
+    description: "Checks requirement completeness and cross-references the story against the existing codebase to surface ambiguities, scope gaps, and existing coverage before spec creation."
+
   before_context:
     command: "speckit.gitnexus.enrich-context"
     optional: true

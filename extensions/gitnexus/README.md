@@ -4,11 +4,11 @@ Integrates [GitNexus](https://gitnexus.dev) graph-based code intelligence into t
 
 ## How It Fits the SDD Workflow
 
-GitNexus hooks into the standard Spec Kit lifecycle at four points:
+GitNexus hooks into the standard Spec Kit lifecycle at five points:
 
 ```
-/speckit.specify
-      │
+/speckit.specify ──► before_specify: gap-analysis (prompted)
+      │                 Story completeness + code coverage check
       ▼
 /speckit.context ──► before_context: enrich-context (prompted)
       │                 Adds architecture, clusters, and execution flows
@@ -36,6 +36,7 @@ GitNexus hooks into the standard Spec Kit lifecycle at four points:
 | Command | Phase | Description |
 |---------|-------|-------------|
 | `speckit.gitnexus.setup` | One-time | Install CLI, configure MCP, index workspace repos |
+| `speckit.gitnexus.gap-analysis` | before_specify (prompted) / Standalone | Analyse story completeness and cross-reference against existing code |
 | `speckit.gitnexus.enrich-context` | before_context (prompted) | Add architecture, clusters, and execution flows to `project-context.md` |
 | `speckit.gitnexus.impact` | before_plan (prompted) / Standalone | Blast-radius analysis — spec-aware auto-discovery or targeted symbol |
 | `speckit.gitnexus.validate-plan` | after_plan (prompted) | Cross-check plan against call graph for unaccounted risks |
@@ -126,3 +127,5 @@ When impact analysis discovers high-risk symbols, the extension gates the workfl
 | "Index is stale" | Run `npx gitnexus analyze` to re-index after recent commits |
 | VS Code MCP not working | Check `.vscode/mcp.json` exists and click "Allow" on the trust dialog |
 | Multi-repo not detecting all repos | Run `npx gitnexus analyze` in each repo, then `npx gitnexus list` to verify |
+| Gap analysis shows no code coverage | Expected for greenfield features — Phase 1 (requirement completeness) still runs |
+| Gap analysis INSUFFICIENT but story is intentionally high-level | Choose "Proceed anyway" — the spec command will handle ambiguities |

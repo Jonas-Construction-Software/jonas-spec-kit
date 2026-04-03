@@ -159,7 +159,7 @@ The following first-party extensions ship with Spec Kit in [`catalog.json`](exte
 
 | Extension | Purpose | Hooks Into | Details |
 |-----------|---------|-----------|---------|
-| [GitNexus Code Intelligence](extensions/gitnexus/) | Graph-based blast-radius analysis, plan validation, and change verification powered by [GitNexus](https://gitnexus.dev) | `context`, `plan`, `implement` | 5 hooks across the SDD lifecycle; multi-repo aware; prompted except `verify-changes` (automatic) |
+| [GitNexus Code Intelligence](extensions/gitnexus/) | Graph-based gap analysis, blast-radius analysis, plan validation, and change verification powered by [GitNexus](https://gitnexus.dev) | `specify`, `context`, `plan`, `implement` | 6 hooks across the SDD lifecycle; multi-repo aware; prompted except `verify-changes` (automatic) |
 | [Self-Test Utility](extensions/selftest/) | Verifies catalog extensions by walking through the discovery, installation, and registration lifecycle | — | Internal testing tool |
 
 ## �🧩 Community Extensions
