@@ -16,6 +16,22 @@
         "core",
         "utility"
       ]
+    },
+    "gitnexus": {
+      "name": "GitNexus Code Intelligence",
+      "id": "gitnexus",
+      "version": "1.0.0",
+      "description": "Integrates GitNexus graph-based code intelligence into the Spec-Driven Development workflow.",
+      "author": "spec-kit-core",
+      "repository": "https://github.com/github/spec-kit",
+      "download_url": "https://github.com/github/spec-kit/releases/download/gitnexus-v1.0.0/gitnexus.zip",
+      "tags": [
+        "code-intelligence",
+        "graph",
+        "impact-analysis",
+        "mcp",
+        "gitnexus"
+      ]
     }
   }
 }

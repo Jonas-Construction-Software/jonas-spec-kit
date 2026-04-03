@@ -71,7 +71,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 ## Pre-Execution Checks
 
 **Check for extension hooks (before tasks generation)**:
-- Check if `.specify/extensions.yml` exists in the project root.
+- Locate `.specify/extensions.yml` in the project root (in multi-repo workspaces, this is the `*-document` repository — already the current directory after Section 0).
 - If it exists, read it and look for entries under the `hooks.before_tasks` key
 - If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
@@ -180,7 +180,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Document contract compatibility tasks
    - Recommend coordination points between repositories during implementation
 
-6. **Check for extension hooks**: After tasks.md is generated, check if `.specify/extensions.yml` exists in the project root.
+6. **Check for extension hooks**: After tasks.md is generated, locate `.specify/extensions.yml` in the project root (in multi-repo workspaces, this is the `*-document` repository).
    - If it exists, read it and look for entries under the `hooks.after_tasks` key
    - If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
    - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.

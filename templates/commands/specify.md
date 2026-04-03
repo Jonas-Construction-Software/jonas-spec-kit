@@ -236,7 +236,7 @@ Before treating the user's message after `/speckit.specify` as the feature descr
 ## Pre-Execution Checks
 
 **Check for extension hooks (before specification)**:
-- Check if `.specify/extensions.yml` exists in the project root.
+- Locate `.specify/extensions.yml` in the project root (in multi-repo workspaces, this is the `*-document` repository).
 - If it exists, read it and look for entries under the `hooks.before_specify` key
 - If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
@@ -624,7 +624,7 @@ Given that finalized feature description (from Step 0), do this:
 
 9. Report completion with branch name, spec file path, checklist results, and readiness for the next phase (`/speckit.clarify` or `/speckit.plan`).
 
-8. **Check for extension hooks**: After reporting completion, check if `.specify/extensions.yml` exists in the project root.
+10. **Check for extension hooks**: After reporting completion, locate `.specify/extensions.yml` in the project root (in multi-repo workspaces, this is the `*-document` repository).
    - If it exists, read it and look for entries under the `hooks.after_specify` key
    - If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
    - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.

@@ -22,7 +22,8 @@
 - [🤔 What is Spec-Driven Development?](#-what-is-spec-driven-development)
 - [⚡ Get Started](#-get-started)
 - [📽️ Video Overview](#️-video-overview)
-- [🧩 Community Extensions](#-community-extensions)
+- [� Official Extensions](#-official-extensions)
+- [�🧩 Community Extensions](#-community-extensions)
 - [🎨 Community Presets](#-community-presets)
 - [🚶 Community Walkthroughs](#-community-walkthroughs)
 - [🛠️ Community Friends](#️-community-friends)
@@ -152,7 +153,16 @@ Want to see Spec Kit in action? Watch our [video overview](https://www.youtube.c
 
 [![Spec Kit video header](/media/spec-kit-video-header.jpg)](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)
 
-## 🧩 Community Extensions
+## � Official Extensions
+
+The following first-party extensions ship with Spec Kit in [`catalog.json`](extensions/catalog.json). Install with `specify extension add <id>`.
+
+| Extension | Purpose | Hooks Into | Details |
+|-----------|---------|-----------|---------|
+| [GitNexus Code Intelligence](extensions/gitnexus/) | Graph-based blast-radius analysis, plan validation, and change verification powered by [GitNexus](https://gitnexus.dev) | `context`, `plan`, `implement` | 5 hooks across the SDD lifecycle; multi-repo aware; prompted except `verify-changes` (automatic) |
+| [Self-Test Utility](extensions/selftest/) | Verifies catalog extensions by walking through the discovery, installation, and registration lifecycle | — | Internal testing tool |
+
+## �🧩 Community Extensions
 
 The following community-contributed extensions are available in [`catalog.community.json`](extensions/catalog.community.json):
 

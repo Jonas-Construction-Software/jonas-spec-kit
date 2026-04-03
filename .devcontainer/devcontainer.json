@@ -63,11 +63,18 @@
 			"speckit.specify": true,
 			"speckit.plan": true,
 			"speckit.tasks": true,
-			"speckit.implement": true
+			"speckit.implement": true,
+			"speckit.gitnexus.setup": true,
+			"speckit.gitnexus.enrich-context": true,
+			"speckit.gitnexus.impact": true,
+			"speckit.gitnexus.pre-flight": true,
+			"speckit.gitnexus.verify-changes": true,
+			"speckit.gitnexus.explore": true
 		},
 		"chat.tools.terminal.autoApprove": {
 			".specify/scripts/bash/": true,
-			".specify/scripts/powershell/": true
+			".specify/scripts/powershell/": true,
+			".specify/extensions/gitnexus/scripts/": true
 		}
       }
     }

@@ -1,0 +1,98 @@
+schema_version: "1.0"
+
+extension:
+  id: "gitnexus"
+  name: "GitNexus Code Intelligence"
+  version: "1.0.0"
+  description: "Integrates GitNexus graph-based code intelligence into the Spec-Driven Development workflow."
+  author: "spec-kit-core"
+  repository: "https://github.com/github/spec-kit"
+  license: "MIT"
+  homepage: "https://gitnexus.dev"
+
+requires:
+  speckit_version: ">=0.2.0"
+  tools:
+    - name: "gitnexus"
+      version: ">=1.0.0"
+      required: false
+
+provides:
+  commands:
+    - name: "speckit.gitnexus.setup"
+      file: "commands/setup.md"
+      description: "Bootstrap GitNexus: install CLI, configure MCP server, index workspace repos."
+
+    - name: "speckit.gitnexus.enrich-context"
+      file: "commands/enrich-context.md"
+      description: "Enrich project-context.md with GitNexus graph intelligence (architecture, clusters, execution flows)."
+
+    - name: "speckit.gitnexus.impact"
+      file: "commands/impact.md"
+      description: "Analyze blast radius of a symbol or area before making changes."
+
+    - name: "speckit.gitnexus.validate-plan"
+      file: "commands/validate-plan.md"
+      description: "Post-plan validation: cross-check plan.md proposed changes against the call graph."
+
+    - name: "speckit.gitnexus.pre-flight"
+      file: "commands/pre-flight.md"
+      description: "Pre-implementation impact check: verify tasks.md symbols against the call graph."
+
+    - name: "speckit.gitnexus.verify-changes"
+      file: "commands/verify-changes.md"
+      description: "Post-implementation verification: compare staged changes against expected task scope."
+
+    - name: "speckit.gitnexus.explore"
+      file: "commands/explore.md"
+      description: "Launch the GitNexus web explorer for interactive graph navigation."
+
+  config:
+    - name: "gitnexus-config.yml"
+      template: "config/gitnexus-config.template.yml"
+      description: "GitNexus extension configuration (staleness threshold, default flags)."
+      required: false
+
+hooks:
+  before_context:
+    command: "speckit.gitnexus.enrich-context"
+    optional: true
+    prompt: "Enrich context with GitNexus graph intelligence?"
+    description: "Gathers functional areas, execution flows, and codebase stats into conversation context so /speckit.context can produce richer architectural analysis."
+
+  before_plan:
+    command: "speckit.gitnexus.impact"
+    optional: true
+    prompt: "Run spec-aware blast radius analysis before planning?"
+    description: "Reads spec.md, discovers matching code symbols, and reports impact risk so the plan can account for high-risk areas."
+
+  after_plan:
+    command: "speckit.gitnexus.validate-plan"
+    optional: true
+    prompt: "Validate plan against GitNexus call graph?"
+    description: "Cross-checks plan.md proposed changes against the call graph to surface unaccounted risks, missing dependencies, and cluster boundary crossings."
+
+  before_implement:
+    command: "speckit.gitnexus.pre-flight"
+    optional: true
+    prompt: "Run GitNexus pre-flight impact check?"
+    description: "Checks tasks.md symbols against the call graph to surface blast-radius risks."
+
+  after_implement:
+    command: "speckit.gitnexus.verify-changes"
+    optional: false
+    description: "Compares staged changes against expected task scope to detect scope creep."
+
+tags:
+  - "code-intelligence"
+  - "graph"
+  - "impact-analysis"
+  - "mcp"
+  - "gitnexus"
+
+defaults:
+  staleness:
+    threshold_commits: 10
+    warn_at_commits: 5
+  analyze:
+    auto_run: false
