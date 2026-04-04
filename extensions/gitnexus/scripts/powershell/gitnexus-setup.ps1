@@ -56,10 +56,21 @@ function Test-GitNexusCli {
 }
 
 function Test-McpConfig {
+    # Check user-level mcp.json first (recommended for GitNexus global setup)
+    $userMcpFile = Join-Path (Join-Path (Join-Path $env:APPDATA "Code") "User") "mcp.json"
+
+    if (Test-Path $userMcpFile) {
+        $content = Get-Content $userMcpFile -Raw
+        if ($content -match '"gitnexus"') {
+            return "configured"
+        }
+    }
+
+    # Fall back to workspace-level .vscode/mcp.json
     $workspaceRoot = try { git rev-parse --show-toplevel 2>$null } catch { $PWD.Path }
     if (-not $workspaceRoot) { $workspaceRoot = $PWD.Path }
 
-    $mcpFile = Join-Path $workspaceRoot ".vscode" "mcp.json"
+    $mcpFile = Join-Path (Join-Path $workspaceRoot ".vscode") "mcp.json"
 
     if (Test-Path $mcpFile) {
         $content = Get-Content $mcpFile -Raw
@@ -75,7 +86,7 @@ function Test-GitNexusIndex {
     $workspaceRoot = try { git rev-parse --show-toplevel 2>$null } catch { $PWD.Path }
     if (-not $workspaceRoot) { $workspaceRoot = $PWD.Path }
 
-    $metaFile = Join-Path $workspaceRoot ".gitnexus" "meta.json"
+    $metaFile = Join-Path (Join-Path $workspaceRoot ".gitnexus") "meta.json"
 
     if (Test-Path $metaFile) {
         return "indexed"
@@ -130,9 +141,9 @@ if ($Verify) {
         Write-Host "Index: $indexStatus"
         Write-Host ""
         if ($allOk) {
-            Write-Host "✅ All checks passed"
+            Write-Host "[OK] All checks passed"
         } else {
-            Write-Host "⚠️  Some checks failed — run /speckit.gitnexus.setup to fix"
+            Write-Host "[WARN] Some checks failed - run /speckit.gitnexus.setup to fix"
         }
     }
 

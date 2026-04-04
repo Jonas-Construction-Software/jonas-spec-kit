@@ -11,7 +11,7 @@ extension:
   homepage: "https://gitnexus.dev"
 
 requires:
-  speckit_version: ">=0.2.0"
+  speckit_version: ">=0.1.0"
   tools:
     - name: "gitnexus"
       version: ">=1.0.0"

@@ -15,7 +15,7 @@
 #   0  Index found, not stale
 #   1  Index not found (.gitnexus/meta.json missing)
 #   2  Index stale (commits behind >= threshold)
-#   3  Repository is a *-document repo (planning artifacts only) — skip silently
+#   3  Repository is a *-document repo (planning artifacts only) - skip silently
 
 param(
     [switch]$Strict,
@@ -35,7 +35,7 @@ if (-not $RepoPath) {
     if (-not $RepoPath) { $RepoPath = $PWD.Path }
 }
 
-# Skip *-document repositories — these hold planning artifacts, not source code
+# Skip *-document repositories - these hold planning artifacts, not source code
 $repoName = Split-Path $RepoPath -Leaf
 if ($repoName -like '*-document') {
     if ($Json) {
@@ -46,7 +46,7 @@ if ($repoName -like '*-document') {
             message = "*-document repositories hold planning artifacts only and are not indexed by GitNexus."
         } | ConvertTo-Json -Compress
     } else {
-        Write-Host "⏭️  Skipping *-document repository: $repoName (planning artifacts only)"
+        Write-Host "[SKIP] Skipping *-document repository: $repoName (planning artifacts only)"
     }
     exit 3
 }
@@ -54,7 +54,7 @@ if ($repoName -like '*-document') {
 # Read config thresholds
 $defaultThreshold = 10
 $strictThreshold = 5
-$configFile = Join-Path $RepoPath ".specify" "extensions" "gitnexus" "gitnexus-config.yml"
+$configFile = Join-Path (Join-Path (Join-Path (Join-Path $RepoPath ".specify") "extensions") "gitnexus") "gitnexus-config.yml"
 
 if (Test-Path $configFile) {
     $configContent = Get-Content $configFile -Raw
@@ -69,7 +69,7 @@ if (Test-Path $configFile) {
 $threshold = if ($Strict) { $strictThreshold } else { $defaultThreshold }
 
 # --- Check 1: Index existence ---
-$metaFile = Join-Path $RepoPath ".gitnexus" "meta.json"
+$metaFile = Join-Path (Join-Path $RepoPath ".gitnexus") "meta.json"
 
 if (-not (Test-Path $metaFile)) {
     if ($Json) {
@@ -79,7 +79,7 @@ if (-not (Test-Path $metaFile)) {
             message = "GitNexus index not found. Run /speckit.gitnexus.setup to index this repository."
         } | ConvertTo-Json -Compress
     } else {
-        Write-Host "⚠️  GitNexus index not found at $RepoPath"
+        Write-Host "[WARN] GitNexus index not found at $RepoPath"
         Write-Host "   Run /speckit.gitnexus.setup to index this repository."
     }
     exit 1
@@ -111,7 +111,7 @@ if ($commitsBehind -ge $threshold) {
             message        = "Index is $commitsBehind commits behind HEAD. Run npx gitnexus analyze to update."
         } | ConvertTo-Json -Compress
     } else {
-        Write-Host "⚠️  GitNexus index is $commitsBehind commits behind HEAD (threshold: $threshold)"
+        Write-Host "[WARN] GitNexus index is $commitsBehind commits behind HEAD (threshold: $threshold)"
         Write-Host "   Run: npx gitnexus analyze"
     }
     exit 2
@@ -126,6 +126,6 @@ if ($Json) {
         threshold      = $threshold
     } | ConvertTo-Json -Compress
 } else {
-    Write-Host "✅ GitNexus index is ready ($commitsBehind commits behind HEAD)"
+    Write-Host "[OK] GitNexus index is ready ($commitsBehind commits behind HEAD)"
 }
 exit 0

@@ -35,13 +35,23 @@ If the script reports GitNexus is **not installed**:
 2. If the user agrees, run: `npm install -g gitnexus@latest`
 3. Re-run the check to confirm installation succeeded
 
-If already installed, report the version and proceed.
+If the script reports **available-via-npx** (not globally installed, but npx can fetch it):
+1. Tell the user: "GitNexus is available via npx but not installed globally. A global install is recommended for faster startup. Install globally with `npm install -g gitnexus@latest`?"
+2. If the user agrees, run: `npm install -g gitnexus@latest`
+3. Re-run the check to confirm it now reports **installed**
+
+If already **installed** globally, report the version and proceed.
 
 ---
 
-## Step 2: Configure VS Code MCP Server
+## Step 2: Configure VS Code MCP Server (User-Level)
 
-Check if `.vscode/mcp.json` exists at the workspace root.
+GitNexus uses a global registry — one MCP server serves all indexed repos. Configure it at the **user level** so it works across all workspaces.
+
+Determine the user-level `mcp.json` path based on the OS:
+- **Windows**: `%APPDATA%\Code\User\mcp.json`
+- **macOS**: `~/Library/Application Support/Code/User/mcp.json`
+- **Linux**: `~/.config/Code/User/mcp.json`
 
 **If the file does not exist**, create it:
 ```json
@@ -60,32 +70,15 @@ Check if `.vscode/mcp.json` exists at the workspace root.
 - If present: report "MCP server already configured" and skip
 - If absent: add the `gitnexus` entry to the existing `servers` object, preserving all other entries
 
+Also check if `.vscode/mcp.json` at the workspace root has an old `gitnexus` entry. If found, inform the user:
+> Found a workspace-level GitNexus MCP config in `.vscode/mcp.json`. The user-level config is now the recommended location. You can remove the `gitnexus` entry from `.vscode/mcp.json` if no other workspace members depend on it.
+
 **Important:** Tell the user:
 > VS Code will show a trust dialog for the new MCP server. Click **"Allow"** when prompted to enable GitNexus tools.
 
 ---
 
-## Step 3: Configure Other Editors (Optional)
-
-If the user has other AI editors installed (Cursor, Claude Code, OpenCode, Codex), run the following. The command is the same on all platforms:
-
-**macOS / Linux (bash):**
-```bash
-npx gitnexus setup
-```
-
-**Windows (PowerShell):**
-```powershell
-npx gitnexus setup
-```
-
-This configures MCP for each detected editor. Editors that are not installed are silently skipped. In a VS Code/Copilot-only environment this step produces "Skipped" for every editor and has no effect.
-
-Report the output so the user sees what was configured vs skipped.
-
----
-
-## Step 4: Discover and Index Workspace Repositories
+## Step 3: Discover and Index Workspace Repositories
 
 Scan the workspace for repositories:
 
@@ -96,13 +89,33 @@ Scan the workspace for repositories:
    - **If missing**: Ask the user: "Repository `<name>` is not indexed. Index it now? (Indexing may take a few minutes for large repos)"
 4. For each repo the user approves, run:
    ```bash
-   npx gitnexus analyze "<repo-path>"
+   npx gitnexus analyze --skip-agents-md "<repo-path>"
    ```
-5. Wait for each indexing operation to complete and report success/failure
+   The `--skip-agents-md` flag prevents GitNexus from creating `AGENTS.md` and `CLAUDE.md` in each repo — Spec Kit manages AI context through its own MCP-based workflow instead.
+5. **Clean up `.claude/skills/gitnexus/`** — the GitNexus CLI currently creates this folder unconditionally during analyze, even with `--skip-agents-md`. After each successful indexing, remove it:
+
+   **macOS / Linux:**
+   ```bash
+   rm -rf "<repo-path>/.claude/skills/gitnexus"
+   ```
+   If the `.claude/skills/` or `.claude/` directory is now empty, remove it too.
+
+   **Windows (PowerShell):**
+   ```powershell
+   $skillsPath = Join-Path "<repo-path>" ".claude" "skills" "gitnexus"
+   if (Test-Path $skillsPath) { Remove-Item $skillsPath -Recurse -Force }
+   # Clean up empty parent directories
+   $parent = Join-Path "<repo-path>" ".claude" "skills"
+   if ((Test-Path $parent) -and -not (Get-ChildItem $parent)) { Remove-Item $parent -Force }
+   $grandparent = Join-Path "<repo-path>" ".claude"
+   if ((Test-Path $grandparent) -and -not (Get-ChildItem $grandparent)) { Remove-Item $grandparent -Force }
+   ```
+   Tell the user: "Removed `.claude/skills/gitnexus/` — Spec Kit uses MCP tools directly and does not need per-repo skill files."
+6. Wait for each indexing operation to complete and report success/failure
 
 ---
 
-## Step 5: Verify Final State
+## Step 4: Verify Final State
 
 Run the verification script:
 
@@ -120,16 +133,15 @@ Also run `npx gitnexus list` and confirm each workspace repository appears.
 
 ---
 
-## Step 6: Summary
+## Step 5: Summary
 
 Report to the user:
 
 | Check | Status |
 |-------|--------|
-| GitNexus CLI | ✅ Installed (version X.Y.Z) |
-| VS Code MCP | ✅ Configured (.vscode/mcp.json) |
-| Other Editors | ✅ Configured / ⏭️ Skipped (none detected) |
-| Indexed Repos | ✅ N repos indexed |
+| GitNexus CLI | Installed (version X.Y.Z) |
+| VS Code MCP | Configured (user-level mcp.json) |
+| Indexed Repos | N repos indexed |
 
 If everything passed:
 > GitNexus is ready. Your AI assistant now has access to code intelligence tools (query, context, impact, detect_changes). Try `/speckit.context` to see graph-enriched context.

@@ -62,6 +62,21 @@ check_cli() {
 }
 
 check_mcp_config() {
+    # Check user-level mcp.json first (recommended for GitNexus global setup)
+    local user_mcp_file=""
+    case "$(uname -s)" in
+        Darwin) user_mcp_file="$HOME/Library/Application Support/Code/User/mcp.json" ;;
+        *)      user_mcp_file="${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/mcp.json" ;;
+    esac
+
+    if [ -f "$user_mcp_file" ]; then
+        if grep -q '"gitnexus"' "$user_mcp_file" 2>/dev/null; then
+            echo "configured"
+            return 0
+        fi
+    fi
+
+    # Fall back to workspace-level .vscode/mcp.json
     local workspace_root
     workspace_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
     local mcp_file="$workspace_root/.vscode/mcp.json"
