@@ -7,12 +7,12 @@ Integrates [GitNexus](https://gitnexus.dev) graph-based code intelligence into t
 GitNexus hooks into the standard Spec Kit lifecycle at five points:
 
 ```
-/speckit.specify ──► before_specify: gap-analysis (prompted)
-      │                 Story completeness + code coverage check
-      ▼
 /speckit.context ──► before_context: enrich-context (prompted)
       │                 Adds architecture, clusters, and execution flows
       ▼                 to conversation context
+/speckit.specify ──► before_specify: gap-analysis (prompted)
+      │                 Story completeness + code coverage check
+      ▼
 /speckit.plan ─────► before_plan:  impact (prompted)
       │                 Spec-aware blast-radius analysis
       │              after_plan:   validate-plan (prompted)
@@ -27,6 +27,10 @@ GitNexus hooks into the standard Spec Kit lifecycle at five points:
       │                 Compares changes against expected task scope
       ▼
     Done
+
+Standalone (any time):
+  /speckit.gitnexus.maintain ── View status, re-index, or clean repos
+  /speckit.gitnexus.explore ─── Launch the web graph explorer
 ```
 
 **All hooks are optional (prompted) except `verify-changes`**, which runs automatically after implementation to catch scope creep.
@@ -43,6 +47,7 @@ GitNexus hooks into the standard Spec Kit lifecycle at five points:
 | `speckit.gitnexus.pre-flight` | before_implement (prompted) | Verify tasks.md symbols against the call graph |
 | `speckit.gitnexus.verify-changes` | after_implement (automatic) | Compare staged changes against expected task scope |
 | `speckit.gitnexus.explore` | Standalone | Launch the GitNexus web explorer |
+| `speckit.gitnexus.maintain` | Standalone | View index status, re-index, or clean specific repos or all repos |
 
 ## Prerequisites
 
@@ -124,8 +129,9 @@ When impact analysis discovers high-risk symbols, the extension gates the workfl
 | Issue | Solution |
 |-------|----------|
 | "GitNexus index not found" | Run `/speckit.gitnexus.setup` or `npx gitnexus analyze` in your repo |
-| "Index is stale" | Run `npx gitnexus analyze` to re-index after recent commits |
+| "Index is stale" | Run `/speckit.gitnexus.maintain reindex <repo>` or `npx gitnexus analyze` to re-index |
 | VS Code MCP not working | Check `.vscode/mcp.json` exists and click "Allow" on the trust dialog |
 | Multi-repo not detecting all repos | Run `npx gitnexus analyze` in each repo, then `npx gitnexus list` to verify |
 | Gap analysis shows no code coverage | Expected for greenfield features — Phase 1 (requirement completeness) still runs |
 | Gap analysis INSUFFICIENT but story is intentionally high-level | Choose "Proceed anyway" — the spec command will handle ambiguities |
+| Re-index fails after `gitnexus clean` (Windows) | Use `/speckit.gitnexus.maintain reindex <repo>` — it performs a raw filesystem delete to avoid stale WAL files |

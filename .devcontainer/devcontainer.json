@@ -69,7 +69,8 @@
 			"speckit.gitnexus.impact": true,
 			"speckit.gitnexus.pre-flight": true,
 			"speckit.gitnexus.verify-changes": true,
-			"speckit.gitnexus.explore": true
+			"speckit.gitnexus.explore": true,
+			"speckit.gitnexus.maintain": true
 		},
 		"chat.tools.terminal.autoApprove": {
 			".specify/scripts/bash/": true,

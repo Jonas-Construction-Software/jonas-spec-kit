@@ -51,6 +51,10 @@ provides:
       file: "commands/explore.md"
       description: "Launch the GitNexus web explorer for interactive graph navigation."
 
+    - name: "speckit.gitnexus.maintain"
+      file: "commands/maintain.md"
+      description: "Manage GitNexus indexes: view status, re-index, or clean specific repos or all repos."
+
   config:
     - name: "gitnexus-config.yml"
       template: "config/gitnexus-config.template.yml"
