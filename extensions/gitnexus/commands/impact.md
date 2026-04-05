@@ -129,8 +129,29 @@ identified).
 
 ## Guard: Check GitNexus Availability
 
-**Run the guard once per target repository.** In multi-repo workspaces, run from
-each implementation repo's root. Skip repos that return `no-index` or `document-repo`.
+**Run the guard once per target repository.** Skip repos that return `no-index`
+or `document-repo`.
+
+The guard scripts live in the `*-document` repo (or the single repo) under
+`.specify/extensions/gitnexus/scripts/`. In a multi-repo workspace,
+implementation repos do **not** have a `.specify/` directory, so always invoke
+the script from the document repo's path and pass the target repo via the
+`-RepoPath` / positional argument.
+
+Let `$DOC_ROOT` = the root of the `*-document` repo (single-repo: the project root).
+
+**macOS / Linux:**
+```bash
+bash "$DOC_ROOT/.specify/extensions/gitnexus/scripts/bash/gitnexus-check.sh" --json "<implementation-repo-path>"
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File "$DOC_ROOT\.specify\extensions\gitnexus\scripts\powershell\gitnexus-check.ps1" -Json -RepoPath "<implementation-repo-path>"
+```
+
+For a **single-repo workspace** where `$DOC_ROOT` is the current repo, the
+paths simplify to:
 
 **macOS / Linux:**
 ```bash

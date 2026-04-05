@@ -49,16 +49,23 @@ This `after_plan` hook validates the plan properly ADDRESSED those risks.
 
 For each implementation repository (or the single repo in single-repo mode):
 
+The guard scripts live in the `*-document` repo (or the single repo) under
+`.specify/extensions/gitnexus/scripts/`. In a multi-repo workspace,
+implementation repos do **not** have a `.specify/` directory, so always invoke
+the script from the document repo's path.
+
+Let `$DOC_ROOT` = the root of the `*-document` repo (single-repo: the project root).
+
 1. Run the guard script:
 
    **Bash:**
    ```bash
-   bash .specify/extensions/gitnexus/scripts/bash/gitnexus-check.sh "<repo-path>"
+   bash "$DOC_ROOT/.specify/extensions/gitnexus/scripts/bash/gitnexus-check.sh" "<repo-path>"
    ```
 
    **PowerShell:**
    ```powershell
-   & .specify/extensions/gitnexus/scripts/powershell/gitnexus-check.ps1 -RepoPath "<repo-path>"
+   & "$DOC_ROOT\.specify\extensions\gitnexus\scripts\powershell\gitnexus-check.ps1" -RepoPath "<repo-path>"
    ```
 
 2. Handle exit codes:

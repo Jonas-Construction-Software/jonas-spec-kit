@@ -35,41 +35,70 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
-## Pre-Execution Checks
+## Pre-Execution Hooks (MUST run before implementation)
 
-**Check for extension hooks (before implementation)**:
-- Locate `.specify/extensions.yml`:
-  - **Single-repo**: Check the project root
-  - **Multi-repo**: Check the `*-document` repository root (the planning artifacts repo where `.specify/` lives). If the current working directory is an implementation repository, navigate to the sibling `*-document` repository to find this file.
-- If it exists, read it and look for entries under the `hooks.before_implement` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+> **CRITICAL GATE**: You MUST complete this entire section — including waiting for
+> user responses and executing any triggered hooks — BEFORE proceeding to
+> Multi-Repository Workspace Detection or the Outline. Do NOT skip ahead.
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+**Step-by-step hook resolution:**
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+1. **Locate hook definitions**: Read `.specify/extensions.yml`:
+   - **Single-repo**: Check the project root
+   - **Multi-repo**: Check the `*-document` repository root (the planning artifacts
+     repo where `.specify/` lives). If the current working directory is an
+     implementation repository, navigate to the sibling `*-document` repository.
+   - If the file does not exist or YAML is invalid → skip to Multi-Repository
+     Workspace Detection.
 
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
+2. **Collect `before_implement` hooks**: Look for entries under the
+   `hooks.before_implement` key.
+   - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without
+     an `enabled` field as enabled by default.
+   - Do **not** evaluate hook `condition` expressions yourself. If the hook has a
+     non-empty `condition` field, skip it (leave condition evaluation to the
+     HookExecutor). Hooks with no `condition` or a null/empty `condition` are executable.
 
-    Wait for the result of the hook command before proceeding to the Outline.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+3. **Execute each remaining hook in order**, based on its `optional` flag:
+
+   **Optional hook** (`optional: true`):
+
+   a. Present the prompt and **ask** the user:
+      ```
+      ## Extension Hook (before implementation)
+
+      **Optional Pre-Hook**: {extension}
+      Description: {description}
+
+      > {prompt}
+
+      **Run this hook now? (Yes / No)**
+      ```
+   b. **WAIT** for the user's response. Do NOT proceed until they answer.
+   c. If the user answers **Yes**:
+      - Execute the hook command as an inline sub-command (`/{command}`).
+      - **WAIT** for the hook to finish and return its output before continuing.
+   d. If the user answers **No**: Skip this hook and move to the next one.
+
+   **Mandatory hook** (`optional: false`):
+
+   a. Announce the hook:
+      ```
+      ## Extension Hook (before implementation)
+
+      **Automatic Pre-Hook**: {extension}
+      Executing: `/{command}`
+      ```
+   b. Execute the hook command immediately as an inline sub-command.
+   c. **WAIT** for the hook to finish and return its output before continuing.
+
+4. **Check for STOP signal**: After ALL hooks have completed (or been skipped),
+   inspect every hook output. If any output contains `⛔ HOOK RESULT: STOP`:
+   - Report the hook's output to the user.
+   - **EXIT the implement command** — do NOT proceed.
+
+5. If no hooks exist, none are executable, or all hooks completed without a STOP
+   signal → proceed to Multi-Repository Workspace Detection.
 
 ## Multi-Repository Workspace Detection
 
@@ -276,33 +305,66 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit.tasks` first to regenerate the task list.
 
-11. **Check for extension hooks**: After completion validation, locate `.specify/extensions.yml`:
-    - **Single-repo**: Check the project root
-    - **Multi-repo**: Check the `*-document` repository root (implementation repos do not have `.specify/`). If the current working directory is an implementation repository after task execution, navigate back to the `*-document` repository to find this file.
-    - If it exists, read it and look for entries under the `hooks.after_implement` key
-    - If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-    - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-    - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-      - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-      - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-    - For each executable hook, output the following based on its `optional` flag:
-      - **Optional hook** (`optional: true`):
-        ```
-        ## Extension Hooks
+11. **Post-Implementation Hooks (MUST run after completion validation)**:
 
-        **Optional Hook**: {extension}
-        Command: `/{command}`
-        Description: {description}
+    > **CRITICAL**: You MUST complete this entire step — including waiting for
+    > user responses and executing any triggered hooks — BEFORE reporting final
+    > results. Do NOT skip mandatory hooks.
 
-        Prompt: {prompt}
-        To execute: `/{command}`
-        ```
-      - **Mandatory hook** (`optional: false`):
-        ```
-        ## Extension Hooks
+    **Step-by-step hook resolution:**
 
-        **Automatic Hook**: {extension}
-        Executing: `/{command}`
-        EXECUTE_COMMAND: {command}
-        ```
-    - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+    a. **Locate hook definitions**: Read `.specify/extensions.yml`:
+       - **Single-repo**: Check the project root
+       - **Multi-repo**: Check the `*-document` repository root (implementation
+         repos do not have `.specify/`). If the current working directory is an
+         implementation repository after task execution, navigate back to the
+         `*-document` repository to find this file.
+       - If the file does not exist or YAML is invalid → skip this step.
+
+    b. **Collect `after_implement` hooks**: Look for entries under the
+       `hooks.after_implement` key.
+       - Filter out hooks where `enabled` is explicitly `false`. Treat hooks
+         without an `enabled` field as enabled by default.
+       - Do **not** evaluate hook `condition` expressions yourself. If the hook
+         has a non-empty `condition` field, skip it (leave condition evaluation
+         to the HookExecutor). Hooks with no `condition` or a null/empty
+         `condition` are executable.
+
+    c. **Execute each remaining hook in order**, based on its `optional` flag:
+
+       **Optional hook** (`optional: true`):
+
+       1. Present the prompt and **ask** the user:
+          ```
+          ## Extension Hook (after implementation)
+
+          **Optional Post-Hook**: {extension}
+          Description: {description}
+
+          > {prompt}
+
+          **Run this hook now? (Yes / No)**
+          ```
+       2. **WAIT** for the user's response. Do NOT proceed until they answer.
+       3. If the user answers **Yes**:
+          - Execute the hook command as an inline sub-command (`/{command}`).
+          - **WAIT** for the hook to finish and return its output before continuing.
+       4. If the user answers **No**: Skip this hook and move to the next one.
+
+       **Mandatory hook** (`optional: false`):
+
+       1. Announce the hook:
+          ```
+          ## Extension Hook (after implementation)
+
+          **Automatic Post-Hook**: {extension}
+          Executing: `/{command}`
+          ```
+       2. Execute the hook command immediately as an inline sub-command.
+       3. **WAIT** for the hook to finish and return its output before continuing.
+       4. Report the hook's output to the user. If the hook flags issues (e.g.,
+          scope creep detected by `verify-changes`), present the findings and
+          let the user decide how to proceed.
+
+    d. If no hooks are registered or `.specify/extensions.yml` does not exist,
+       skip this step silently.

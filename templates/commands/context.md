@@ -153,32 +153,45 @@ If `before_context` hooks were loaded during Pre-Execution Checks, execute them
 **now** — scoped to the current repository. This keeps intelligence data fresh
 and limits context window usage to one repo at a time.
 
-For each loaded `before_context` hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-- If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-- If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
+> **CRITICAL**: You MUST complete hook execution for this repository — including
+> waiting for user responses — BEFORE proceeding to Source Discovery.
 
-For each executable hook, output the following based on its `optional` flag:
-- **Optional hook** (`optional: true`):
-  ```
-  ## Extension Hooks — {current_repo_name}
+For each loaded `before_context` hook, do **not** evaluate hook `condition`
+expressions yourself. If the hook has a non-empty `condition` field, skip it.
+Hooks with no `condition` or a null/empty `condition` are executable.
 
-  **Optional Pre-Hook**: {extension}
-  Command: `/{command}`
-  Description: {description}
+For each executable hook, based on its `optional` flag:
 
-  Prompt: {prompt}
-  To execute: `/{command}`
-  ```
-- **Mandatory hook** (`optional: false`):
-  ```
-  ## Extension Hooks — {current_repo_name}
+**Optional hook** (`optional: true`):
 
-  **Automatic Pre-Hook**: {extension}
-  Executing: `/{command}`
-  EXECUTE_COMMAND: {command}
+1. Present the prompt and **ask** the user:
+   ```
+   ## Extension Hook — {current_repo_name} (before context)
 
-  Wait for the result of the hook command before proceeding to Source Discovery.
-  ```
+   **Optional Pre-Hook**: {extension}
+   Description: {description}
+
+   > {prompt}
+
+   **Run this hook now? (Yes / No)**
+   ```
+2. **WAIT** for the user's response. Do NOT proceed until they answer.
+3. If the user answers **Yes**:
+   - Execute the hook command as an inline sub-command (`/{command}`).
+   - **WAIT** for the hook to finish and return its output before continuing.
+4. If the user answers **No**: Skip this hook and move to the next one.
+
+**Mandatory hook** (`optional: false`):
+
+1. Announce the hook:
+   ```
+   ## Extension Hook — {current_repo_name} (before context)
+
+   **Automatic Pre-Hook**: {extension}
+   Executing: `/{command}`
+   ```
+2. Execute the hook command immediately as an inline sub-command.
+3. **WAIT** for the hook to finish and return its output before continuing.
 
 If no hooks were loaded, skip this section silently.
 
@@ -569,36 +582,59 @@ Reverse‑engineering summary
 
 ---
 
-## 9) Post-Execution Hook Check
+## 9) Post-Execution Hooks
 
-**Check for extension hooks (after context generation)**:
-- Locate `.specify/extensions.yml`:
-  - **Single-repo**: Check the project root
-  - **Multi-repo**: Check the `*-document` repository root (implementation repos do not have `.specify/`).
-- If it exists, read it and look for entries under the `hooks.after_context` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+> **CRITICAL**: You MUST complete this section — including waiting for user
+> responses and executing any triggered hooks — BEFORE reporting final results.
 
-    **Optional Post-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+**Step-by-step hook resolution:**
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+1. **Locate hook definitions**: Read `.specify/extensions.yml`:
+   - **Single-repo**: Check the project root
+   - **Multi-repo**: Check the `*-document` repository root (implementation repos
+     do not have `.specify/`).
+   - If the file does not exist or YAML is invalid → skip this section.
 
-    **Automatic Post-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+2. **Collect `after_context` hooks**: Look for entries under the
+   `hooks.after_context` key.
+   - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without
+     an `enabled` field as enabled by default.
+   - Do **not** evaluate hook `condition` expressions yourself. If the hook has a
+     non-empty `condition` field, skip it. Hooks with no `condition` or a
+     null/empty `condition` are executable.
+
+3. **Execute each remaining hook in order**, based on its `optional` flag:
+
+   **Optional hook** (`optional: true`):
+
+   a. Present the prompt and **ask** the user:
+      ```
+      ## Extension Hook (after context)
+
+      **Optional Post-Hook**: {extension}
+      Description: {description}
+
+      > {prompt}
+
+      **Run this hook now? (Yes / No)**
+      ```
+   b. **WAIT** for the user's response. Do NOT proceed until they answer.
+   c. If the user answers **Yes**:
+      - Execute the hook command as an inline sub-command (`/{command}`).
+      - **WAIT** for the hook to finish and return its output before continuing.
+   d. If the user answers **No**: Skip this hook and move to the next one.
+
+   **Mandatory hook** (`optional: false`):
+
+   a. Announce the hook:
+      ```
+      ## Extension Hook (after context)
+
+      **Automatic Post-Hook**: {extension}
+      Executing: `/{command}`
+      ```
+   b. Execute the hook command immediately as an inline sub-command.
+   c. **WAIT** for the hook to finish and return its output before continuing.
+
+4. If no hooks are registered or `.specify/extensions.yml` does not exist,
+   skip this section silently.

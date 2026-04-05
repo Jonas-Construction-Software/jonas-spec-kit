@@ -135,8 +135,29 @@ wait until after Phase 2 to deliver a single consolidated report.
 
 ### Guard: Check GitNexus Availability
 
-**Run the guard once per target repository.** In multi-repo workspaces, run from
-each implementation repo's root. Skip repos that return `no-index` or `document-repo`.
+**Run the guard once per target repository.** Skip repos that return `no-index`
+or `document-repo`.
+
+The guard scripts live in the `*-document` repo (or the single repo) under
+`.specify/extensions/gitnexus/scripts/`. In a multi-repo workspace,
+implementation repos do **not** have a `.specify/` directory, so always invoke
+the script from the document repo's path and pass the target repo via the
+`-RepoPath` / positional argument.
+
+Let `$DOC_ROOT` = the root of the `*-document` repo (single-repo: the project root).
+
+**macOS / Linux:**
+```bash
+bash "$DOC_ROOT/.specify/extensions/gitnexus/scripts/bash/gitnexus-check.sh" --json "<implementation-repo-path>"
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File "$DOC_ROOT\.specify\extensions\gitnexus\scripts\powershell\gitnexus-check.ps1" -Json -RepoPath "<implementation-repo-path>"
+```
+
+For a **single-repo workspace** where `$DOC_ROOT` is the current repo, the
+paths simplify to:
 
 **macOS / Linux:**
 ```bash
@@ -186,14 +207,19 @@ Search terms:
 
 **For each target repository**, query GitNexus with each search term:
 ```
-gitnexus_query({query: "<search_term>", repo: "<repo_name>", limit: 5, include_content: false})
+gitnexus_query({query: "<search_term>", repo: "<repo_name>", limit: 5, include_content: true})
 ```
+
+> **Parallelization**: Issue all search term queries **in parallel** per repository.
+> Agents supporting parallel tool calls should batch all `gitnexus_query` invocations
+> into a single round-trip rather than waiting for each query to complete sequentially.
 
 Deduplicate results across all queries and repos.
 
 ### Step C: Assess Coverage per Requirement Area
 
-For each search term / requirement area, classify the code coverage:
+For each search term / requirement area, classify the code coverage using the
+content already returned by Step B (`include_content: true`):
 
 | Coverage Status | Meaning |
 |----------------|---------|
@@ -201,29 +227,33 @@ For each search term / requirement area, classify the code coverage:
 | **PARTIALLY IMPLEMENTED** | Matching symbols exist but are stubbed, incomplete, or only cover part of the requirement |
 | **NOT PRESENT** | No matching symbols found — this is greenfield work |
 
-To distinguish IMPLEMENTED from PARTIALLY IMPLEMENTED, use `gitnexus_context()` on
-the top matching symbol to inspect its callees and determine if the implementation
-is complete or stubbed:
-```
-gitnexus_context({name: "<symbol_name>", repo: "<repo_name>"})
-```
-
-Look for indicators of stubs:
+**Classify inline** from the query results. Look for indicators of stubs in the
+returned content:
 - Functions that throw `NotImplementedError` or similar
 - Functions that return hardcoded/placeholder values
 - Functions with TODO/FIXME comments in their description
 - Functions with zero callees (leaf nodes that should call something)
 
+> **Only** call `gitnexus_context()` as a fallback if the returned content was
+> truncated or insufficient to determine stub status. In most cases the content
+> from Step B is enough to classify — avoid extra round-trips.
+
 ### Step D: Risk Scan for High-Impact Symbols
 
-For any discovered symbol that is IMPLEMENTED or PARTIALLY IMPLEMENTED, run a
-quick impact check to flag high-risk areas:
+**Cap**: Run impact checks on **at most 2 symbols** — pick the 2 with the highest
+caller density or relevance score from Step B results. Skip the rest to keep
+the analysis fast.
+
+For each selected symbol that is IMPLEMENTED or PARTIALLY IMPLEMENTED:
 ```
 gitnexus_impact({target: "<symbol_name>", repo: "<repo_name>", direction: "upstream", maxDepth: 1})
 ```
 
 Only report symbols where d=1 caller count is ≥ 5 or risk is HIGH/CRITICAL.
 These are areas where changes to implement the story carry elevated risk.
+
+> If the guard script reported `status: stale`, skip the risk scan entirely and
+> note in the report: *"Risk scan skipped — index is stale."*
 
 ---
 

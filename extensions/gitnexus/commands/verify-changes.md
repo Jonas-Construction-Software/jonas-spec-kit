@@ -96,8 +96,28 @@ Build a mapping of `repo-name → [expected symbols with completion status]`.
 
 ## Step 2: Guard Check (per repository)
 
-**Run the guard once per distinct `[repo-name]` found in tasks.md.** Run from
-each implementation repo's root.
+**Run the guard once per distinct `[repo-name]` found in tasks.md.**
+
+The guard scripts live in the `*-document` repo (or the single repo) under
+`.specify/extensions/gitnexus/scripts/`. In a multi-repo workspace,
+implementation repos do **not** have a `.specify/` directory, so always invoke
+the script from the document repo's path and pass the target repo via the
+`-RepoPath` / positional argument.
+
+Let `$DOC_ROOT` = the root of the `*-document` repo (single-repo: the project root).
+
+**macOS / Linux:**
+```bash
+bash "$DOC_ROOT/.specify/extensions/gitnexus/scripts/bash/gitnexus-check.sh" --json "<implementation-repo-path>"
+```
+
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File "$DOC_ROOT\.specify\extensions\gitnexus\scripts\powershell\gitnexus-check.ps1" -Json -RepoPath "<implementation-repo-path>"
+```
+
+For a **single-repo workspace** where `$DOC_ROOT` is the current repo, the
+paths simplify to the original relative form:
 
 **macOS / Linux:**
 ```bash

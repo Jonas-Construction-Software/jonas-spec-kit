@@ -20,6 +20,10 @@ If user input specifies particular repositories or options, incorporate them bel
 
 Run the appropriate check script for the current OS:
 
+The setup scripts live in the `*-document` repo (or the single repo) under
+`.specify/extensions/gitnexus/scripts/`. In a multi-repo workspace, run them
+from the document repo's root.
+
 **macOS / Linux:**
 ```bash
 bash .specify/extensions/gitnexus/scripts/bash/gitnexus-setup.sh --check
@@ -128,6 +132,9 @@ bash .specify/extensions/gitnexus/scripts/bash/gitnexus-setup.sh --verify
 ```powershell
 powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/powershell/gitnexus-setup.ps1 -Verify
 ```
+
+> In a multi-repo workspace, ensure you run these from the `*-document` repo root
+> where `.specify/` exists.
 
 Also run `npx gitnexus list` and confirm each workspace repository appears.
 
