@@ -29,6 +29,7 @@ GitNexus hooks into the standard Spec Kit lifecycle at five points:
     Done
 
 Standalone (any time):
+  /speckit.gitnexus.ask ─────── Ask questions about your codebase
   /speckit.gitnexus.maintain ── View status, re-index, or clean repos
   /speckit.gitnexus.explore ─── Launch the web graph explorer
 ```
@@ -48,6 +49,7 @@ Standalone (any time):
 | `speckit.gitnexus.verify-changes` | after_implement (automatic) | Compare staged changes against expected task scope |
 | `speckit.gitnexus.explore` | Standalone | Launch the GitNexus web explorer |
 | `speckit.gitnexus.maintain` | Standalone | View index status, re-index, or clean specific repos or all repos |
+| `speckit.gitnexus.ask` | Standalone | Ask questions about your codebase (dependencies, flows, architecture, safety, hotspots) |
 
 ## Prerequisites
 
