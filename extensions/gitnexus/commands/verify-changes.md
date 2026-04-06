@@ -262,6 +262,9 @@ developer should review:
 
 ## Fallback
 
-If GitNexus is unavailable:
-1. Log: "GitNexus verification skipped (index unavailable)"
-2. Skip silently — do NOT block the post-implementation workflow
+If GitNexus tools are unavailable, the guard script does not exist, or any
+GitNexus tool call fails (timeout, error, etc.):
+1. Log a brief note: "Change verification skipped: GitNexus not available. Review changes manually before committing."
+2. Do NOT block the post-implementation workflow — this hook is mandatory but
+   informational. The parent `/speckit.implement` command must continue normally.
+3. Do NOT emit a `⛔ HOOK RESULT: STOP` signal.
