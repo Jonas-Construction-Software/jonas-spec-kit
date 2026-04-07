@@ -107,6 +107,23 @@ If **no source code** is detected, **skip the repository**.
      `project-context.md`.
    - Do **not** duplicate documentation. Summarize and reference only.
 
+### Per-Repo Full-Cycle Rule
+
+> **CRITICAL**: Complete the **entire cycle** — analysis AND writing — for each
+> repository before moving to the next. Do NOT analyze all repos first and then
+> write all files afterward.
+
+For each eligible repository, execute in this order:
+1. Pre-Analysis (2.0) — read existing `project-context.md`, extract preservation content
+2. Extension hooks (2.0a) — run `before_context` hooks for this repo
+3. Source Discovery + Architecture + Diagrams + Quality (2.1–2.4)
+4. **Write `project-context.md` immediately** (all writing phases, Section 6.2)
+5. Post-write verification
+6. **Release context** — discard analysis data and pre-hook intelligence for
+   this repo before proceeding to the next one
+
+This keeps the context window lean and avoids carrying stale data across repos.
+
 ---
 
 ## 2) Per‑Repo Execution Flow
@@ -214,24 +231,54 @@ If no hook ran, the hook was declined, or no intelligence data is present,
 proceed with standard file-scanning analysis.
 
 ### 2.1 Source Discovery
-Identify characteristics of the repository based on its structure, including:
+
+**When pre-hook intelligence IS available** — use it as the **primary** source:
+- **Accept directly** from pre-hook data (do NOT re-scan for these):
+  - Languages and frameworks (from codebase stats)
+  - Indexed symbol counts and functional area count
+  - High-level project structure and module boundaries
+- **Read files only to fill gaps** the pre-hook does NOT cover:
+  - Build/project configuration files (`package.json`, `*.csproj`, `angular.json`, etc.)
+  - Environment and deployment configuration (`.env.example`, `docker-compose.yml`, CI files)
+  - Entry points and bootstrap files (only if not clear from execution flows)
+  - **Cap file reads at 15** when pre-hook data is available
+- **User-specified focus areas** (if provided): read additional files in those areas
+
+**When pre-hook intelligence is NOT available** — full file-scanning mode:
 - Languages and frameworks detected
 - Project layout and modules
 - Build systems and configurations
 - **User-specified focus areas** (if provided)
-- **Pre-hook intelligence** (if available): Incorporate codebase stats (languages, indexed symbol counts, functional area count) from any code intelligence pre-hook output
+- No cap on file reads; scan as needed for comprehensive coverage
 
 ### 2.2 Architectural Understanding
-Document:
+
+**When pre-hook intelligence IS available** — use it as the **primary** source:
+- **Accept directly** from pre-hook data (do NOT re-derive from files):
+  - Functional areas / clusters → map directly to logical components and layers
+  - Execution flows → map to component interactions and integration points
+  - Cohesion scores → identify well-bounded vs. cross-cutting components
+- **Read files only for context the graph cannot provide:**
+  - Deployment or hosting configuration
+  - Specific API contracts and endpoint definitions
+  - Business-domain context not captured in code structure
+- **User-highlighted architectural concerns** (if provided): read files in those areas
+
+**When pre-hook intelligence is NOT available:**
 - The primary purpose of the repository
 - Logical components, layers, and interactions
 - Relevant integrations
 - Deployment or hosting context if identifiable
 - **User-highlighted architectural concerns** (if provided)
-- **Pre-hook intelligence** (if available): Use functional areas/clusters and execution flows from code intelligence pre-hook output to identify component boundaries, layering, and cross-cutting concerns
 
 ### 2.3 Diagram Generation
 **Generate actual Mermaid diagrams** to illustrate architecture and workflows.
+
+**When pre-hook intelligence IS available:**
+- **Derive diagrams primarily from execution flows and functional areas** instead of
+  inferring structure from file reads. This produces more accurate diagrams with less analysis.
+- Use execution flow entry points and step sequences for sequence diagrams
+- Use functional area relationships for architecture/data-flow diagrams
 
 Required diagram types:
 - **System Context** (Section 1): High-level overview showing system boundaries and external integrations
@@ -246,7 +293,6 @@ Diagram requirements:
 - Wrap in proper Mermaid code blocks: ` ```mermaid ... ``` `
 - **Generate diagrams based on actual repository analysis**, not generic templates
 - **Emphasize user-mentioned components** if user input specified particular flows or integrations
-- **Pre-hook intelligence** (if available): Use execution flows and functional area relationships from code intelligence data to generate more accurate sequence and data-flow diagrams
 
 Example system context diagram:
 ```mermaid
