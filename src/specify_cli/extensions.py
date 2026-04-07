@@ -1216,8 +1216,8 @@ class CommandRegistrar:
 class ExtensionCatalog:
     """Manages extension catalog fetching, caching, and searching."""
 
-    DEFAULT_CATALOG_URL = "https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.json"
-    COMMUNITY_CATALOG_URL = "https://raw.githubusercontent.com/github/spec-kit/main/extensions/catalog.community.json"
+    DEFAULT_CATALOG_URL = "https://raw.githubusercontent.com/Jonas-Construction-Software/jonas-spec-kit/main/extensions/catalog.json"
+    COMMUNITY_CATALOG_URL = "https://raw.githubusercontent.com/Jonas-Construction-Software/jonas-spec-kit/main/extensions/catalog.community.json"
     CACHE_DURATION = 3600  # 1 hour in seconds
 
     def __init__(self, project_root: Path):
