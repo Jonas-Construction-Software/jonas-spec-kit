@@ -2,6 +2,47 @@
 
 <!-- insert new changelog below this comment -->
 
+## [0.1.22] - 2026-04-07
+
+### Changed
+
+- feat: GitNexus code intelligence extension with SDD integration (#13)
+- update the changelog for proper display (#9)
+- chore: sync from dev repo - bump to v0.1.21 (#7)
+- fix: correct step output references in release workflow (get_tag -> version)
+- Update CHANGELOG.md
+- chore: bump version to 0.1.20
+- fix: use GH_TOKEN for GitHub CLI in release-trigger workflow
+- fix: use GITHUB_TOKEN instead of RELEASE_PAT in release-trigger workflow
+- test: fix download_and_extract_template mock return values
+- test: add missing show_banner mock to fix failing tests
+- fix: correct step ID references in release workflow
+- Add Community Walkthroughs section to README (#1766)
+- feat(extensions): add Jira Integration to community catalog (#1764)
+- Add Azure DevOps Integration extension to community catalog (#1734)
+- Fix docs: update Antigravity link and add initialization example (#1748)
+- fix: wire after_tasks and after_implement hook events into command templates (#1702)
+- make c ignores consistent with c++ (#1747)
+- chore: bump version to 0.1.13 (#1746)
+- feat: add kiro-cli and AGENT_CONFIG consistency coverage (#1690)
+- feat: add verify extension to community catalog (#1726)
+- Add Retrospective Extension to community catalog README table (#1741)
+- fix(scripts): add empty description validation and branch checkout error handling (#1559)
+- fix: correct Copilot extension command registration (#1724)
+- fix(implement): remove Makefile from C ignore patterns (#1558)
+- Add sync extension to community catalog (#1728)
+- fix(checklist): clarify file handling behavior for append vs create (#1556)
+- fix(clarify): correct conflicting question limit from 10 to 5 (#1557)
+- fix: use RELEASE_PAT so tag push triggers release workflow (#1736)
+- fix: release-trigger uses release branch + PR instead of direct push to main (#1733)
+- fix: Split release process to sync pyproject.toml version with git tags (#1732)
+- fix: prepend YAML frontmatter to Cursor .mdc files (#1699)
+- chore(deps): bump astral-sh/setup-uv from 6 to 7 (#1709)
+- chore(deps): bump actions/setup-python from 5 to 6 (#1710)
+- chore: Update outdated GitHub Actions versions (#1706)
+- docs: Document dual-catalog system for extensions (#1689)
+- Fix version command in documentation (#1685)
+
 ## [0.1.21] - 2026-03-27
 
 ### Changed
