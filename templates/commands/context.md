@@ -27,6 +27,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 When user input is provided, incorporate it throughout the analysis:
 
+- **Repo targeting**: If user input is a bare repository name (e.g., `gitnexus-web`) or a relative path (e.g., `./gitnexus-web`), treat it as a **target filter** — process **only** that repository and skip all others. Record skipped repos in the summary under **"Skipped (Not targeted)"**. If no repo name is specified, process all eligible repositories as normal.
 - **Focus areas**: Emphasize components, patterns, or concerns mentioned by the user
 - **Terminology**: Use domain-specific terms provided by the user
 - **Architectural priorities**: Highlight integration points, data flows, or design decisions specified by the user
@@ -67,7 +68,24 @@ If **no source code** is detected, **skip the repository**.
 
 ---
 
+## Pre-Execution Checks
+
+**Load extension hook manifest (once per workspace)**:
+- Locate `.specify/extensions.yml`:
+  - **Single-repo**: Check the project root
+  - **Multi-repo**: Check the `*-document` repository root (the planning artifacts repo where `.specify/` lives). This file does not exist in implementation repositories.
+- If it exists, read and parse it. Extract entries under `hooks.before_context` and `hooks.after_context`.
+- If the YAML cannot be parsed or is invalid, skip hook loading silently.
+- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
+- Store the resolved hook list in working context for use during per-repo iteration (Section 2.0a).
+- **Do NOT execute hooks here.** Hooks fire per-repo inside the iteration loop to keep
+  context window usage proportional to the repository being analyzed.
+- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently.
+
+---
+
 ## 1) Workspace Traversal
+0. **Check for repo target filter**: If `$ARGUMENTS` contains a repository name or relative path, apply it as a filter. After steps 1–2 below produce the eligible repository list, retain **only** the repository whose folder name or path matches the provided value (case-insensitive). Skip all non-matching repositories without prompting and record them in the final summary under **"Skipped (Not targeted)"**. If `$ARGUMENTS` is empty or contains no recognizable repo name/path, skip this step and process all eligible repositories.
 1. Detect all repositories in the workspace.
 2. Exclude repositories whose names match the pattern `*-document` (these contain planning artifacts, not source code).
 3. For each remaining repository, check for **source code presence**.
@@ -88,6 +106,23 @@ If **no source code** is detected, **skip the repository**.
    - Document these relationships **briefly** in each corresponding
      `project-context.md`.
    - Do **not** duplicate documentation. Summarize and reference only.
+
+### Per-Repo Full-Cycle Rule
+
+> **CRITICAL**: Complete the **entire cycle** — analysis AND writing — for each
+> repository before moving to the next. Do NOT analyze all repos first and then
+> write all files afterward.
+
+For each eligible repository, execute in this order:
+1. Pre-Analysis (2.0) — read existing `project-context.md`, extract preservation content
+2. Extension hooks (2.0a) — run `before_context` hooks for this repo
+3. Source Discovery + Architecture + Diagrams + Quality (2.1–2.4)
+4. **Write `project-context.md` immediately** (all writing phases, Section 6.2)
+5. Post-write verification
+6. **Release context** — discard analysis data and pre-hook intelligence for
+   this repo before proceeding to the next one
+
+This keeps the context window lean and avoids carrying stale data across repos.
 
 ---
 
@@ -127,17 +162,109 @@ user-mentioned components in analysis and diagrams.
   - Guardrails: preserve existing unless code proves them obsolete
 - **Document evolution**: Add changelog entry noting significant changes between versions
 
-**If no existing file:** Skip to Source Discovery (section 2.1).
+**If no existing file:** Skip to Section 2.0a (Extension Hooks).
+
+### 2.0a Extension Hooks (per-repo)
+
+If `before_context` hooks were loaded during Pre-Execution Checks, execute them
+**now** — scoped to the current repository. This keeps intelligence data fresh
+and limits context window usage to one repo at a time.
+
+> **CRITICAL**: You MUST complete hook execution for this repository — including
+> waiting for user responses — BEFORE proceeding to Source Discovery.
+
+For each loaded `before_context` hook, do **not** evaluate hook `condition`
+expressions yourself. If the hook has a non-empty `condition` field, skip it.
+Hooks with no `condition` or a null/empty `condition` are executable.
+
+For each executable hook, based on its `optional` flag:
+
+**Optional hook** (`optional: true`):
+
+1. Present the prompt and **ask** the user:
+   ```
+   ## Extension Hook — {current_repo_name} (before context)
+
+   **Optional Pre-Hook**: {extension}
+   Description: {description}
+
+   > {prompt}
+
+   **Run this hook now? (Yes / No)**
+   ```
+2. **WAIT** for the user's response. Do NOT proceed until they answer.
+3. If the user answers **Yes**:
+   - Execute the hook command as an inline sub-command (`/{command}`).
+   - **WAIT** for the hook to finish and return its output before continuing.
+4. If the user answers **No**: Skip this hook and move to the next one.
+
+**Mandatory hook** (`optional: false`):
+
+1. Announce the hook:
+   ```
+   ## Extension Hook — {current_repo_name} (before context)
+
+   **Automatic Pre-Hook**: {extension}
+   Executing: `/{command}`
+   ```
+2. Execute the hook command immediately as an inline sub-command.
+3. **WAIT** for the hook to finish and return its output before continuing.
+
+If no hooks were loaded, skip this section silently.
+
+#### Pre-Hook Intelligence Integration
+
+If a `before_context` hook produced **structured intelligence output** for this
+repository — typically marked with `═══ ... PRE-HOOK INTELLIGENCE ═══`
+delimiters — retain that data in working context for this repo's analysis:
+
+- **Section 2.1 (Source Discovery)**: Incorporate codebase stats (languages, symbol counts)
+- **Section 2.2 (Architectural Understanding)**: Use functional areas/clusters to inform component analysis
+- **Section 2.3 (Diagram Generation)**: Use execution flows to produce more accurate sequence/flow diagrams
+- **Phase 5 (Writing)**: Write a dedicated **Code Intelligence** appendix after section 20
+
+The intelligence data applies **only to the current repository**. When the agent
+moves to the next repo in the workspace, previous intelligence data should be
+treated as out of scope — the hook will fire again for that repo if applicable.
+
+If no hook ran, the hook was declined, or no intelligence data is present,
+proceed with standard file-scanning analysis.
 
 ### 2.1 Source Discovery
-Identify characteristics of the repository based on its structure, including:
+
+**When pre-hook intelligence IS available** — use it as the **primary** source:
+- **Accept directly** from pre-hook data (do NOT re-scan for these):
+  - Languages and frameworks (from codebase stats)
+  - Indexed symbol counts and functional area count
+  - High-level project structure and module boundaries
+- **Read files only to fill gaps** the pre-hook does NOT cover:
+  - Build/project configuration files (`package.json`, `*.csproj`, `angular.json`, etc.)
+  - Environment and deployment configuration (`.env.example`, `docker-compose.yml`, CI files)
+  - Entry points and bootstrap files (only if not clear from execution flows)
+  - **Cap file reads at 15** when pre-hook data is available
+- **User-specified focus areas** (if provided): read additional files in those areas
+
+**When pre-hook intelligence is NOT available** — full file-scanning mode:
 - Languages and frameworks detected
 - Project layout and modules
 - Build systems and configurations
 - **User-specified focus areas** (if provided)
+- No cap on file reads; scan as needed for comprehensive coverage
 
 ### 2.2 Architectural Understanding
-Document:
+
+**When pre-hook intelligence IS available** — use it as the **primary** source:
+- **Accept directly** from pre-hook data (do NOT re-derive from files):
+  - Functional areas / clusters → map directly to logical components and layers
+  - Execution flows → map to component interactions and integration points
+  - Cohesion scores → identify well-bounded vs. cross-cutting components
+- **Read files only for context the graph cannot provide:**
+  - Deployment or hosting configuration
+  - Specific API contracts and endpoint definitions
+  - Business-domain context not captured in code structure
+- **User-highlighted architectural concerns** (if provided): read files in those areas
+
+**When pre-hook intelligence is NOT available:**
 - The primary purpose of the repository
 - Logical components, layers, and interactions
 - Relevant integrations
@@ -146,6 +273,12 @@ Document:
 
 ### 2.3 Diagram Generation
 **Generate actual Mermaid diagrams** to illustrate architecture and workflows.
+
+**When pre-hook intelligence IS available:**
+- **Derive diagrams primarily from execution flows and functional areas** instead of
+  inferring structure from file reads. This produces more accurate diagrams with less analysis.
+- Use execution flow entry points and step sequences for sequence diagrams
+- Use functional area relationships for architecture/data-flow diagrams
 
 Required diagram types:
 - **System Context** (Section 1): High-level overview showing system boundaries and external integrations
@@ -277,6 +410,7 @@ Write content in **5 sequential phases** (do not attempt to write all sections a
   - **Section 17**: Merge preserved questions with newly discovered ones
   - **Section 18**: Incorporate preserved guardrails unless contradicted
   - **Section 20**: Append to preserved changelog entries with new version entry noting changes
+  - **Code Intelligence Appendix**: If pre-hook intelligence data is present in conversation context, append a **Code Intelligence** appendix after section 20 (see template in section 7). If no pre-hook data is available, omit the appendix entirely.
 
 Each phase must:
 1. Generate content for assigned sections only
@@ -444,6 +578,34 @@ How to add a new feature.
 - <YYYY‑MM‑DD> — Initial generation
 
 **Note**: When updating existing `project-context.md`, preserve previous changelog entries and add new entry describing significant changes (e.g., "2026-03-02 — Updated architecture diagrams, added new integration with XYZ service, resolved 3 open questions").
+
+---
+
+## Appendix: Code Intelligence
+
+> Auto-generated from code intelligence tooling. Present only when a
+> `before_context` pre-hook provided structured codebase analysis.
+
+### Functional Areas
+
+| Area | Description | Key Symbols | Cohesion |
+|------|-------------|-------------|----------|
+| … | … | … | … |
+
+### Key Execution Flows
+
+| Flow | Entry Point | Steps | Areas Crossed |
+|------|-------------|-------|---------------|
+| … | … | … | … |
+
+### Codebase Stats
+
+- **Languages**: …
+- **Indexed Symbols**: …
+- **Execution Flows**: …
+- **Functional Areas**: …
+
+*Omit this appendix entirely if no code intelligence data was provided by a pre-hook.*
 ````
 
 ---
@@ -454,6 +616,7 @@ At the end of processing the workspace, output:
 Reverse‑engineering summary
 - Repositories scanned: <N>
 - Excluded (matches *-document): <K>
+- Skipped (Not targeted): <T>
 - Skipped (No source detected): <M>
 - Skipped (Overwrite not approved): <P>
 - Successfully written:
@@ -462,3 +625,62 @@ Reverse‑engineering summary
 - Failed writes (if any):
   - <repo3>/project-context.md (failed at phase X: <error>)
 ```
+
+---
+
+## 9) Post-Execution Hooks
+
+> **CRITICAL**: You MUST complete this section — including waiting for user
+> responses and executing any triggered hooks — BEFORE reporting final results.
+
+**Step-by-step hook resolution:**
+
+1. **Locate hook definitions**: Read `.specify/extensions.yml`:
+   - **Single-repo**: Check the project root
+   - **Multi-repo**: Check the `*-document` repository root (implementation repos
+     do not have `.specify/`).
+   - If the file does not exist or YAML is invalid → skip this section.
+
+2. **Collect `after_context` hooks**: Look for entries under the
+   `hooks.after_context` key.
+   - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without
+     an `enabled` field as enabled by default.
+   - Do **not** evaluate hook `condition` expressions yourself. If the hook has a
+     non-empty `condition` field, skip it. Hooks with no `condition` or a
+     null/empty `condition` are executable.
+
+3. **Execute each remaining hook in order**, based on its `optional` flag:
+
+   **Optional hook** (`optional: true`):
+
+   a. Present the prompt and **ask** the user:
+      ```
+      ## Extension Hook (after context)
+
+      **Optional Post-Hook**: {extension}
+      Description: {description}
+
+      > {prompt}
+
+      **Run this hook now? (Yes / No)**
+      ```
+   b. **WAIT** for the user's response. Do NOT proceed until they answer.
+   c. If the user answers **Yes**:
+      - Execute the hook command as an inline sub-command (`/{command}`).
+      - **WAIT** for the hook to finish and return its output before continuing.
+   d. If the user answers **No**: Skip this hook and move to the next one.
+
+   **Mandatory hook** (`optional: false`):
+
+   a. Announce the hook:
+      ```
+      ## Extension Hook (after context)
+
+      **Automatic Post-Hook**: {extension}
+      Executing: `/{command}`
+      ```
+   b. Execute the hook command immediately as an inline sub-command.
+   c. **WAIT** for the hook to finish and return its output before continuing.
+
+4. If no hooks are registered or `.specify/extensions.yml` does not exist,
+   skip this section silently.

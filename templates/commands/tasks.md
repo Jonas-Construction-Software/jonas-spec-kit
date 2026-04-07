@@ -68,39 +68,67 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
-## Pre-Execution Checks
+## Pre-Execution Hooks (MUST run before task generation)
 
-**Check for extension hooks (before tasks generation)**:
-- Check if `.specify/extensions.yml` exists in the project root.
-- If it exists, read it and look for entries under the `hooks.before_tasks` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-- Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-- For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-  - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-  - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-- For each executable hook, output the following based on its `optional` flag:
-  - **Optional hook** (`optional: true`):
-    ```
-    ## Extension Hooks
+> **CRITICAL GATE**: You MUST complete this entire section — including waiting for
+> user responses and executing any triggered hooks — BEFORE proceeding to the
+> Outline. Do NOT skip ahead.
 
-    **Optional Pre-Hook**: {extension}
-    Command: `/{command}`
-    Description: {description}
+**Step-by-step hook resolution:**
 
-    Prompt: {prompt}
-    To execute: `/{command}`
-    ```
-  - **Mandatory hook** (`optional: false`):
-    ```
-    ## Extension Hooks
+1. **Locate hook definitions**: Read `.specify/extensions.yml` in the project
+   root (in multi-repo workspaces, this is the `*-document` repository — already
+   the current directory after Section 0).
+   - If the file does not exist or YAML is invalid → skip to the Outline.
 
-    **Automatic Pre-Hook**: {extension}
-    Executing: `/{command}`
-    EXECUTE_COMMAND: {command}
-    
-    Wait for the result of the hook command before proceeding to the Outline.
-    ```
-- If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+2. **Collect `before_tasks` hooks**: Look for entries under the
+   `hooks.before_tasks` key.
+   - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without
+     an `enabled` field as enabled by default.
+   - Do **not** evaluate hook `condition` expressions yourself. If the hook has a
+     non-empty `condition` field, skip it (leave condition evaluation to the
+     HookExecutor). Hooks with no `condition` or a null/empty `condition` are executable.
+
+3. **Execute each remaining hook in order**, based on its `optional` flag:
+
+   **Optional hook** (`optional: true`):
+
+   a. Present the prompt and **ask** the user:
+      ```
+      ## Extension Hook (before task generation)
+
+      **Optional Pre-Hook**: {extension}
+      Description: {description}
+
+      > {prompt}
+
+      **Run this hook now? (Yes / No)**
+      ```
+   b. **WAIT** for the user's response. Do NOT proceed until they answer.
+   c. If the user answers **Yes**:
+      - Execute the hook command as an inline sub-command (`/{command}`).
+      - **WAIT** for the hook to finish and return its output before continuing.
+   d. If the user answers **No**: Skip this hook and move to the next one.
+
+   **Mandatory hook** (`optional: false`):
+
+   a. Announce the hook:
+      ```
+      ## Extension Hook (before task generation)
+
+      **Automatic Pre-Hook**: {extension}
+      Executing: `/{command}`
+      ```
+   b. Execute the hook command immediately as an inline sub-command.
+   c. **WAIT** for the hook to finish and return its output before continuing.
+
+4. **Check for STOP signal**: After ALL hooks have completed (or been skipped),
+   inspect every hook output. If any output contains `⛔ HOOK RESULT: STOP`:
+   - Report the hook's output to the user.
+   - **EXIT the tasks command** — do NOT proceed to the Outline.
+
+5. If no hooks exist, none are executable, or all hooks completed without a STOP
+   signal → proceed to the Outline.
 
 ## Outline
 
@@ -180,34 +208,60 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Document contract compatibility tasks
    - Recommend coordination points between repositories during implementation
 
-6. **Check for extension hooks**: After tasks.md is generated, check if `.specify/extensions.yml` exists in the project root.
-   - If it exists, read it and look for entries under the `hooks.after_tasks` key
-   - If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
-   - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
-   - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
-     - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
-     - If the hook defines a non-empty `condition`, skip the hook and leave condition evaluation to the HookExecutor implementation
-   - For each executable hook, output the following based on its `optional` flag:
-     - **Optional hook** (`optional: true`):
-       ```
-       ## Extension Hooks
+6. **Post-Task Hooks (MUST run after task generation)**:
 
-       **Optional Hook**: {extension}
-       Command: `/{command}`
-       Description: {description}
+   > **CRITICAL**: You MUST complete this step — including waiting for user
+   > responses and executing any triggered hooks — BEFORE finishing.
 
-       Prompt: {prompt}
-       To execute: `/{command}`
-       ```
-     - **Mandatory hook** (`optional: false`):
-       ```
-       ## Extension Hooks
+   **Step-by-step hook resolution:**
 
-       **Automatic Hook**: {extension}
-       Executing: `/{command}`
-       EXECUTE_COMMAND: {command}
-       ```
-   - If no hooks are registered or `.specify/extensions.yml` does not exist, skip silently
+   a. **Locate hook definitions**: Read `.specify/extensions.yml` in the project
+      root (in multi-repo workspaces, this is the `*-document` repository).
+      - If the file does not exist or YAML is invalid → skip this step.
+
+   b. **Collect `after_tasks` hooks**: Look for entries under the
+      `hooks.after_tasks` key.
+      - Filter out hooks where `enabled` is explicitly `false`. Treat hooks
+        without an `enabled` field as enabled by default.
+      - Do **not** evaluate hook `condition` expressions yourself. If the hook
+        has a non-empty `condition` field, skip it. Hooks with no `condition`
+        or a null/empty `condition` are executable.
+
+   c. **Execute each remaining hook in order**, based on its `optional` flag:
+
+      **Optional hook** (`optional: true`):
+
+      1. Present the prompt and **ask** the user:
+         ```
+         ## Extension Hook (after task generation)
+
+         **Optional Post-Hook**: {extension}
+         Description: {description}
+
+         > {prompt}
+
+         **Run this hook now? (Yes / No)**
+         ```
+      2. **WAIT** for the user's response. Do NOT proceed until they answer.
+      3. If the user answers **Yes**:
+         - Execute the hook command as an inline sub-command (`/{command}`).
+         - **WAIT** for the hook to finish and return its output before continuing.
+      4. If the user answers **No**: Skip this hook and move to the next one.
+
+      **Mandatory hook** (`optional: false`):
+
+      1. Announce the hook:
+         ```
+         ## Extension Hook (after task generation)
+
+         **Automatic Post-Hook**: {extension}
+         Executing: `/{command}`
+         ```
+      2. Execute the hook command immediately as an inline sub-command.
+      3. **WAIT** for the hook to finish and return its output before continuing.
+
+   d. If no hooks are registered or `.specify/extensions.yml` does not exist,
+      skip this step silently.
 
 Context for task generation: {ARGS}
 

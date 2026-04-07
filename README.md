@@ -22,7 +22,8 @@
 - [🤔 What is Spec-Driven Development?](#-what-is-spec-driven-development)
 - [⚡ Get Started](#-get-started)
 - [📽️ Video Overview](#️-video-overview)
-- [🧩 Community Extensions](#-community-extensions)
+- [� Official Extensions](#-official-extensions)
+- [�🧩 Community Extensions](#-community-extensions)
 - [🎨 Community Presets](#-community-presets)
 - [🚶 Community Walkthroughs](#-community-walkthroughs)
 - [🛠️ Community Friends](#️-community-friends)
@@ -146,13 +147,40 @@ Use **`/speckit.implement`** to execute all tasks and build your feature accordi
 
 For detailed step-by-step instructions, see our [comprehensive guide](./spec-driven.md).
 
+### 8. Supercharge with Code Intelligence (optional)
+
+Install the [GitNexus](https://gitnexus.dev) extension to add graph-based code intelligence to your workflow — blast-radius analysis before planning, gap analysis before specifying, and automatic change verification after implementation.
+
+```bash
+# Install the extension
+specify extension add gitnexus
+
+# Run one-time setup (installs CLI, configures MCP, indexes your repos)
+/speckit.gitnexus.setup
+```
+
+Once installed, GitNexus hooks fire automatically during `/speckit.context`, `/speckit.specify`, `/speckit.plan`, and `/speckit.implement` — no extra steps needed. You also get standalone commands like `/speckit.gitnexus.ask` to query your codebase and `/speckit.gitnexus.explore` to launch the web graph explorer.
+
+See the [GitNexus extension README](extensions/gitnexus/) for the full command list and configuration options.
+
+> **Keeping extensions up to date:** Run `specify extension update gitnexus` (or `specify extension update` to update all) when a new version is available.
+
 ## 📽️ Video Overview
 
 Want to see Spec Kit in action? Watch our [video overview](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)!
 
 [![Spec Kit video header](/media/spec-kit-video-header.jpg)](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)
 
-## 🧩 Community Extensions
+## � Official Extensions
+
+The following first-party extensions ship with Spec Kit in [`catalog.json`](extensions/catalog.json). Install with `specify extension add <id>`.
+
+| Extension | Purpose | Hooks Into | Details |
+|-----------|---------|-----------|---------|
+| [GitNexus Code Intelligence](extensions/gitnexus/) | Graph-based gap analysis, blast-radius analysis, plan validation, and change verification powered by [GitNexus](https://gitnexus.dev) | `specify`, `context`, `plan`, `implement` | 6 hooks across the SDD lifecycle; multi-repo aware; prompted except `verify-changes` (automatic) |
+| [Self-Test Utility](extensions/selftest/) | Verifies catalog extensions by walking through the discovery, installation, and registration lifecycle | — | Internal testing tool |
+
+## �🧩 Community Extensions
 
 The following community-contributed extensions are available in [`catalog.community.json`](extensions/catalog.community.json):
 
@@ -270,6 +298,15 @@ The `specify` command supports the following options:
 | ------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `init`  | Initialize a new Specify project from the latest template                                                                                                                                                                                                                                |
 | `check` | Check for installed tools: `git` plus all CLI-based agents configured in `AGENT_CONFIG` (for example: `claude`, `gemini`, `code`/`code-insiders`, `cursor-agent`, `windsurf`, `junie`, `qwen`, `opencode`, `codex`, `kiro-cli`, `shai`, `qodercli`, `vibe`, `kimi`, `iflow`, `pi`, etc.) |
+| `extension add <id>` | Install an extension from the catalog, a local directory (`--dev`), or a URL (`--from`) |
+| `extension update [id]` | Update a specific extension or all installed extensions to the latest catalog version |
+| `extension remove <id>` | Uninstall an extension and clean up its commands and config |
+| `extension search` | Search available extensions in official and community catalogs |
+| `extension list` | List currently installed extensions |
+| `preset add <id>` | Install a preset to customize templates and commands |
+| `preset remove <id>` | Uninstall a preset and restore lower-priority versions |
+| `preset search` | Search available presets in official and community catalogs |
+| `preset list` | List currently installed presets |
 
 ### `specify init` Arguments & Options
 

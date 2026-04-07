@@ -1,0 +1,14 @@
+# GitNexus Extension Configuration
+# Copy to .specify/extensions/gitnexus/gitnexus-config.yml and customize.
+
+# Staleness detection
+staleness:
+  # Number of commits behind HEAD before the guard warns about a stale index.
+  threshold_commits: 10
+  # Stricter threshold used by pre-flight (before_implement) checks.
+  warn_at_commits: 5
+
+# Index management
+analyze:
+  # Never auto-run 'gitnexus analyze' in hooks — always requires explicit user consent.
+  auto_run: false
