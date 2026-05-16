@@ -170,6 +170,7 @@ powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/po
 ```
 
 **Interpret the result per repo:**
+- `"status": "npx-mcp-config"` → Skip Phase 2 (code coverage) and note in the report: "GitNexus MCP config uses npx (affected by npm bug). Run `/speckit.gitnexus.setup` to fix."
 - `"status": "ready"` → Include this repo in Phase 2
 - `"status": "no-index"` → Skip this repo. If ALL repos return `no-index`, skip
   Phase 2 entirely and note in the report: "Code coverage check skipped — no
@@ -178,6 +179,8 @@ powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/po
 - `"status": "skipped"` (reason: `"document-repo"`) → Skip silently
 
 **If guard passes for at least one repo, proceed. Otherwise skip to Step 4.**
+
+**If any GitNexus MCP tool call fails** (tool not found, MCP server not running, or connection error), read the user-level `mcp.json` and check if `servers.gitnexus.command` is `"npx"`. If so, note in the report: "GitNexus MCP server isn’t starting — config uses npx (affected by npm bug). Run `/speckit.gitnexus.setup` to fix." Skip remaining GitNexus steps.
 
 ### Step A: Extract Search Terms
 

@@ -43,15 +43,6 @@ function Test-GitNexusCli {
         }
     } catch { }
 
-    if ($status -eq "not-found") {
-        try {
-            $version = & npx -y gitnexus@latest --version 2>$null
-            if ($LASTEXITCODE -eq 0 -and $version) {
-                $status = "available-via-npx"
-            }
-        } catch { }
-    }
-
     return @{ Status = $status; Version = if ($version) { $version.Trim() } else { "" } }
 }
 

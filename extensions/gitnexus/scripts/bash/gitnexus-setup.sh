@@ -51,10 +51,6 @@ check_cli() {
         GITNEXUS_VERSION=$(gitnexus --version 2>/dev/null || echo "unknown")
         echo "installed"
         return 0
-    elif npx -y gitnexus@latest --version >/dev/null 2>&1; then
-        GITNEXUS_VERSION=$(npx -y gitnexus@latest --version 2>/dev/null || echo "unknown")
-        echo "available-via-npx"
-        return 0
     else
         echo "not-found"
         return 1

@@ -39,11 +39,6 @@ If the script reports GitNexus is **not installed**:
 2. If the user agrees, run: `npm install -g gitnexus@latest`
 3. Re-run the check to confirm installation succeeded
 
-If the script reports **available-via-npx** (not globally installed, but npx can fetch it):
-1. Tell the user: "GitNexus is available via npx but not installed globally. A global install is recommended for faster startup. Install globally with `npm install -g gitnexus@latest`?"
-2. If the user agrees, run: `npm install -g gitnexus@latest`
-3. Re-run the check to confirm it now reports **installed**
-
 If already **installed** globally, report the version and proceed.
 
 ---
@@ -63,16 +58,18 @@ Determine the user-level `mcp.json` path based on the OS:
   "servers": {
     "gitnexus": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "gitnexus@latest", "mcp"]
+      "command": "gitnexus",
+      "args": ["mcp"]
     }
   }
 }
 ```
 
 **If the file exists**, read it and check whether `servers.gitnexus` is already present:
-- If present: report "MCP server already configured" and skip
-- If absent: add the `gitnexus` entry to the existing `servers` object, preserving all other entries
+- **If absent**: add the `gitnexus` entry to the existing `servers` object, preserving all other entries
+- **If present**: inspect the existing `"command"` value:
+  - If `"command"` is `"npx"`: tell the user: "Your MCP config uses `npx` to launch GitNexus. This is affected by an npm bug that can prevent the MCP server from starting. Switching to the globally-installed `gitnexus` command is recommended. Update now?" If the user agrees, replace the entry with `{"type":"stdio","command":"gitnexus","args":["mcp"]}`. If the user declines, proceed but warn that MCP failures may occur.
+  - If `"command"` is `"gitnexus"`: report "MCP server already configured" and skip
 
 Also check if `.vscode/mcp.json` at the workspace root has an old `gitnexus` entry. If found, inform the user:
 > Found a workspace-level GitNexus MCP config in `.vscode/mcp.json`. The user-level config is now the recommended location. You can remove the `gitnexus` entry from `.vscode/mcp.json` if no other workspace members depend on it.
@@ -93,7 +90,7 @@ Scan the workspace for repositories:
    - **If missing**: Ask the user: "Repository `<name>` is not indexed. Index it now? (Indexing may take a few minutes for large repos)"
 4. For each repo the user approves, run:
    ```bash
-   npx gitnexus analyze --skip-agents-md "<repo-path>"
+   gitnexus analyze --skip-agents-md "<repo-path>"
    ```
    The `--skip-agents-md` flag prevents GitNexus from creating `AGENTS.md` and `CLAUDE.md` in each repo — Spec Kit manages AI context through its own MCP-based workflow instead.
 5. **Clean up `.claude/skills/gitnexus/`** — the GitNexus CLI currently creates this folder unconditionally during analyze, even with `--skip-agents-md`. After each successful indexing, remove it:
@@ -136,7 +133,7 @@ powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/po
 > In a multi-repo workspace, ensure you run these from the `*-document` repo root
 > where `.specify/` exists.
 
-Also run `npx gitnexus list` and confirm each workspace repository appears.
+Also run `gitnexus list` and confirm each workspace repository appears.
 
 ---
 
