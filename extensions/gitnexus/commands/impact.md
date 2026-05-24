@@ -164,10 +164,13 @@ powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/po
 ```
 
 **Interpret the result per repo:**
+- `"status": "npx-mcp-config"` → Tell the user: "Your GitNexus MCP server config uses `npx`, which is affected by an npm bug that can prevent the server from starting. Run `/speckit.gitnexus.setup` to fix this." Stop here.
 - `"status": "ready"` → Include this repo in analysis
 - `"status": "no-index"` → Skip this repo. If ALL repos return `no-index`, tell the user: "No GitNexus indexes found. Run `/speckit.gitnexus.setup` first."
 - `"status": "stale"` → Include but note: "Index is N commits behind HEAD — results may be incomplete."
 - `"status": "skipped"` (reason: `"document-repo"`) → Skip silently (expected).
+
+**If any GitNexus MCP tool call fails** (tool not found, MCP server not running, or connection error), read the user-level `mcp.json` and check if `servers.gitnexus.command` is `"npx"`. If so, tell the user: "The GitNexus MCP server isn’t starting because your config uses `npx`, which is affected by an npm bug. Run `/speckit.gitnexus.setup` to fix this." Stop here.
 
 ---
 

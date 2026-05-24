@@ -16,6 +16,7 @@
 #   1  Index not found (.gitnexus/meta.json missing)
 #   2  Index stale (commits behind >= threshold)
 #   3  Repository is a *-document repo (planning artifacts only) - skip silently
+#   4  MCP server config uses npx (affected by npm arborist bug)
 
 param(
     [switch]$Strict,
@@ -68,6 +69,30 @@ if (Test-Path $configFile) {
 
 $threshold = if ($Strict) { $strictThreshold } else { $defaultThreshold }
 
+# --- Check 0: MCP config uses npx (affected by npm arborist bug) ---
+$userMcpFile = Join-Path (Join-Path (Join-Path $env:APPDATA "Code") "User") "mcp.json"
+
+if (Test-Path $userMcpFile) {
+    $mcpContent = Get-Content $userMcpFile -Raw
+    if ($mcpContent -match '"gitnexus"') {
+        # Check if the gitnexus server entry uses npx as the command
+        if ($mcpContent -match '"command"\s*:\s*"npx"') {
+            if ($Json) {
+                @{
+                    status   = "npx-mcp-config"
+                    repo     = $RepoPath
+                    mcp_file = $userMcpFile
+                    message  = "MCP server config uses npx which is affected by an npm bug. Run /speckit.gitnexus.setup to fix."
+                } | ConvertTo-Json -Compress
+            } else {
+                Write-Host "[WARN] MCP server config uses npx (affected by npm bug)"
+                Write-Host "   Run /speckit.gitnexus.setup to switch to the global gitnexus command."
+            }
+            exit 4
+        }
+    }
+}
+
 # --- Check 1: Index existence ---
 $metaFile = Join-Path (Join-Path $RepoPath ".gitnexus") "meta.json"
 
@@ -108,11 +133,11 @@ if ($commitsBehind -ge $threshold) {
             repo           = $RepoPath
             commits_behind = $commitsBehind
             threshold      = $threshold
-            message        = "Index is $commitsBehind commits behind HEAD. Run npx gitnexus analyze to update."
+            message        = "Index is $commitsBehind commits behind HEAD. Run gitnexus analyze to update."
         } | ConvertTo-Json -Compress
     } else {
         Write-Host "[WARN] GitNexus index is $commitsBehind commits behind HEAD (threshold: $threshold)"
-        Write-Host "   Run: npx gitnexus analyze"
+        Write-Host "   Run: gitnexus analyze"
     }
     exit 2
 }

@@ -53,10 +53,10 @@ Standalone (any time):
 
 ## Prerequisites
 
-- **Node.js** (v18+) — for `npx` to run the GitNexus CLI
+- **Node.js** (v18+) — required to install the GitNexus CLI via npm
 - **Git** — required for staleness checks and change detection
 
-GitNexus itself is installed automatically during setup via `npm install -g gitnexus@latest`, or on-demand via `npx`.
+GitNexus itself is installed globally during setup via `npm install -g gitnexus@latest`.
 
 ## Quick Start
 
@@ -130,10 +130,10 @@ When impact analysis discovers high-risk symbols, the extension gates the workfl
 
 | Issue | Solution |
 |-------|----------|
-| "GitNexus index not found" | Run `/speckit.gitnexus.setup` or `npx gitnexus analyze` in your repo |
-| "Index is stale" | Run `/speckit.gitnexus.maintain reindex <repo>` or `npx gitnexus analyze` to re-index |
+| "GitNexus index not found" | Run `/speckit.gitnexus.setup` or `gitnexus analyze` in your repo |
+| "Index is stale" | Run `/speckit.gitnexus.maintain reindex <repo>` or `gitnexus analyze` to re-index |
 | VS Code MCP not working | Check `.vscode/mcp.json` exists and click "Allow" on the trust dialog |
-| Multi-repo not detecting all repos | Run `npx gitnexus analyze` in each repo, then `npx gitnexus list` to verify |
+| Multi-repo not detecting all repos | Run `gitnexus analyze` in each repo, then `gitnexus list` to verify |
 | Gap analysis shows no code coverage | Expected for greenfield features — Phase 1 (requirement completeness) still runs |
 | Gap analysis INSUFFICIENT but story is intentionally high-level | Choose "Proceed anyway" — the spec command will handle ambiguities |
 | Re-index fails after `gitnexus clean` (Windows) | Use `/speckit.gitnexus.maintain reindex <repo>` — it performs a raw filesystem delete to avoid stale WAL files |

@@ -48,11 +48,14 @@ powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/po
 ```
 
 **Interpret the result:**
+- `"status": "npx-mcp-config"` → Tell the user: "Your GitNexus MCP server config uses `npx`, which is affected by an npm bug that can prevent the server from starting. Run `/speckit.gitnexus.setup` to fix this." Stop here.
 - `"status": "ready"` → Proceed with launch instructions
 - `"status": "no-index"` → Direct the user to run `/speckit.gitnexus.setup` first
 - `"status": "stale"` → Note staleness but proceed — the web UI will also show this warning
 - `"status": "skipped"` (reason: `"document-repo"`) → The `*-document` repo has no code
   to visualize. Check that at least one implementation repo is indexed, then proceed.
+
+**If any GitNexus MCP tool call fails** (tool not found, MCP server not running, or connection error), read the user-level `mcp.json` and check if `servers.gitnexus.command` is `"npx"`. If so, tell the user: "The GitNexus MCP server isn’t starting because your config uses `npx`, which is affected by an npm bug. Run `/speckit.gitnexus.setup` to fix this." Stop here.
 
 ---
 
@@ -67,7 +70,7 @@ source code to index.
 
 If any implementation repos are not yet indexed, instruct the user:
 ```bash
-cd <repo-name> && npx gitnexus analyze
+cd <repo-name> && gitnexus analyze
 ```
 
 Repeat for each implementation repo. All indexed repos are automatically
@@ -84,7 +87,7 @@ run a separate server per repository.
 Instruct the user to start the server from any directory:
 
 ```bash
-npx gitnexus serve
+gitnexus serve
 ```
 
 This starts an HTTP API on port **4747**, binding to `127.0.0.1` by default.
@@ -92,8 +95,8 @@ The server runs in the foreground — the user should run it in a separate
 terminal or background it.
 
 **Options:**
-- **Alternative port:** `npx gitnexus serve --port 4748`
-- **Custom host:** `npx gitnexus serve --host 0.0.0.0` (exposes to LAN — use with caution)
+- **Alternative port:** `gitnexus serve --port 4748`
+- **Custom host:** `gitnexus serve --host 0.0.0.0` (exposes to LAN — use with caution)
 
 ---
 

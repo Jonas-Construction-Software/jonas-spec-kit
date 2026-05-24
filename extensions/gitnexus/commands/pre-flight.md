@@ -130,10 +130,13 @@ powershell -ExecutionPolicy Bypass -File .specify/extensions/gitnexus/scripts/po
 ```
 
 **Interpret the result per repo:**
+- `"status": "npx-mcp-config"` → Log: "GitNexus MCP config uses npx (affected by npm bug). Run `/speckit.gitnexus.setup` to fix." Let implementation proceed without pre-flight.
 - `"status": "ready"` → Include this repo in analysis
 - `"status": "no-index"` → Skip this repo's symbols. Log: "Pre-flight skipped for {repo-name} (no index)". If ALL repos return `no-index`, log "GitNexus pre-flight unavailable (no indexes)" and let implementation proceed.
-- `"status": "stale"` → Include but warn: "⚠️ Index for {repo-name} is N commits behind — pre-flight results may miss recent changes. Consider running `npx gitnexus analyze` in {repo-name} first."
+- `"status": "stale"` → Include but warn: "⚠️ Index for {repo-name} is N commits behind — pre-flight results may miss recent changes. Consider running `gitnexus analyze` in {repo-name} first."
 - `"status": "skipped"` (reason: `"document-repo"`) → Skip silently (expected — the `*-document` repo has no code to analyze).
+
+**If any GitNexus MCP tool call fails** (tool not found, MCP server not running, or connection error), read the user-level `mcp.json` and check if `servers.gitnexus.command` is `"npx"`. If so, log: "GitNexus MCP server isn’t starting — config uses npx (affected by npm bug). Run `/speckit.gitnexus.setup` to fix." Let implementation proceed without pre-flight.
 
 ---
 

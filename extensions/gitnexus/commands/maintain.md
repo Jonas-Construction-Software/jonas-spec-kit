@@ -46,11 +46,16 @@ powershell -ExecutionPolicy Bypass -File "$DOC_ROOT\.specify\extensions\gitnexus
 If GitNexus CLI is not available:
 > GitNexus CLI is not installed. Run `/speckit.gitnexus.setup` first.
 
+If the result is `"status": "npx-mcp-config"`:
+> Your GitNexus MCP server config uses `npx`, which is affected by an npm bug that can prevent the server from starting. Run `/speckit.gitnexus.setup` to fix this.
+
+**If any GitNexus MCP tool call fails** (tool not found, MCP server not running, or connection error), read the user-level `mcp.json` and check if `servers.gitnexus.command` is `"npx"`. If so, tell the user: "The GitNexus MCP server isn't starting because your config uses `npx`, which is affected by an npm bug. Run `/speckit.gitnexus.setup` to fix this."
+
 ---
 
 ## Step 1: Discover Indexed Repositories
 
-Run `npx gitnexus list` to get all registered repositories from the global registry (`~/.gitnexus/registry.json`).
+Run `gitnexus list` to get all registered repositories from the global registry (`~/.gitnexus/registry.json`).
 
 For each listed repo, also read `.gitnexus/meta.json` to gather:
 - **Last indexed**: `indexedAt` timestamp
@@ -106,12 +111,12 @@ For the target repo (`<repo-path>`):
 
    **Without embeddings:**
    ```bash
-   cd "<repo-path>" && npx gitnexus analyze --skip-agents-md
+   cd "<repo-path>" && gitnexus analyze --skip-agents-md
    ```
 
    **With embeddings** (if the repo previously had them):
    ```bash
-   cd "<repo-path>" && npx gitnexus analyze --skip-agents-md --embeddings
+   cd "<repo-path>" && gitnexus analyze --skip-agents-md --embeddings
    ```
 
    The `--skip-agents-md` flag prevents GitNexus from creating `AGENTS.md` and `CLAUDE.md` — Spec Kit manages AI context through its own workflow.
@@ -137,7 +142,7 @@ For the target repo (`<repo-path>`):
 
    Tell the user: "Removed `.claude/skills/gitnexus/` — Spec Kit uses MCP tools directly and does not need per-repo skill files."
 
-5. **Verify**: Run `npx gitnexus list` and confirm the repo reappears with an updated timestamp.
+5. **Verify**: Run `gitnexus list` and confirm the repo reappears with an updated timestamp.
 
 ---
 
@@ -151,7 +156,7 @@ Repeat the **Re-index a Specific Repo** steps for every implementation repo in t
 4. For each repo:
    - Check for existing embeddings
    - Delete `.gitnexus/`
-   - Run `npx gitnexus analyze --skip-agents-md` (add `--embeddings` if applicable)
+   - Run `gitnexus analyze --skip-agents-md` (add `--embeddings` if applicable)
    - Clean up `.claude/skills/gitnexus/`
 5. After all repos are processed, show a summary table
 
@@ -180,7 +185,7 @@ If the user confirms:
 
 2. **Unregister from the global registry** (so it no longer appears in `gitnexus list` and the MCP server):
    ```bash
-   cd "<repo-path>" && npx gitnexus clean --force
+   cd "<repo-path>" && gitnexus clean --force
    ```
    Note: If the `.gitnexus/` directory was already deleted, `gitnexus clean` may report "No indexed repository found" — this is fine, the registry is updated regardless.
 

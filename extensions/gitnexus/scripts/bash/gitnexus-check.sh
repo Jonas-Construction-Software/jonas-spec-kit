@@ -17,6 +17,7 @@
 #   1  Index not found (.gitnexus/meta.json missing)
 #   2  Index stale (commits behind >= threshold)
 #   3  Repository is a *-document repo (planning artifacts only) — skip silently
+#   4  MCP server config uses npx (affected by npm arborist bug)
 
 set -e
 
@@ -80,6 +81,31 @@ else
     THRESHOLD="$DEFAULT_THRESHOLD"
 fi
 
+# --- Check 0: MCP config uses npx (affected by npm arborist bug) ---
+MCP_NPX_DETECTED=false
+USER_MCP_FILE=""
+case "$(uname -s)" in
+    Darwin) USER_MCP_FILE="$HOME/Library/Application Support/Code/User/mcp.json" ;;
+    *)      USER_MCP_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/Code/User/mcp.json" ;;
+esac
+
+if [ -f "$USER_MCP_FILE" ] && grep -q '"gitnexus"' "$USER_MCP_FILE" 2>/dev/null; then
+    # Check if the gitnexus server entry uses npx as the command
+    if grep -A3 '"gitnexus"' "$USER_MCP_FILE" 2>/dev/null | grep -q '"command"[[:space:]]*:[[:space:]]*"npx"'; then
+        MCP_NPX_DETECTED=true
+        if $JSON_MODE; then
+            printf '{"status":"npx-mcp-config","repo":"%s","mcp_file":"%s","message":"MCP server config uses npx which is affected by an npm bug. Run /speckit.gitnexus.setup to fix."}\n' \
+                "$(printf '%s' "$REPO_PATH" | sed 's/\\\\/\\\\\\\\/g; s/"/\\\"/g')" \
+                "$(printf '%s' "$USER_MCP_FILE" | sed 's/\\\\/\\\\\\\\/g; s/"/\\\"/g')"
+            exit 4
+        else
+            echo "⚠️  MCP server config uses npx (affected by npm bug)"
+            echo "   Run /speckit.gitnexus.setup to switch to the global gitnexus command."
+            exit 4
+        fi
+    fi
+fi
+
 # --- Check 1: Index existence ---
 META_FILE="$REPO_PATH/.gitnexus/meta.json"
 
@@ -106,12 +132,12 @@ fi
 
 if [ "$COMMITS_BEHIND" -ge "$THRESHOLD" ] 2>/dev/null; then
     if $JSON_MODE; then
-        printf '{"status":"stale","repo":"%s","commits_behind":%s,"threshold":%s,"message":"Index is %s commits behind HEAD. Run npx gitnexus analyze to update."}\n' \
+        printf '{"status":"stale","repo":"%s","commits_behind":%s,"threshold":%s,"message":"Index is %s commits behind HEAD. Run gitnexus analyze to update."}\n' \
             "$(printf '%s' "$REPO_PATH" | sed 's/\\/\\\\/g; s/"/\\"/g')" \
             "$COMMITS_BEHIND" "$THRESHOLD" "$COMMITS_BEHIND"
     else
         echo "⚠️  GitNexus index is $COMMITS_BEHIND commits behind HEAD (threshold: $THRESHOLD)"
-        echo "   Run: npx gitnexus analyze"
+        echo "   Run: gitnexus analyze"
     fi
     exit 2
 fi
