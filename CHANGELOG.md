@@ -2,6 +2,22 @@
 
 <!-- insert new changelog below this comment -->
 
+## [0.1.23] - 2026-05-24
+
+### Changed
+
+- fix: replace npx with global gitnexus CLI to avoid npm arborist bug (#17)
+- chore(deps): bump actions/setup-dotnet from 4 to 5 (#5)
+- chore(deps): bump actions/deploy-pages from 4 to 5 (#12)
+- chore(deps): bump actions/configure-pages from 5 to 6 (#10)
+- chore(deps): bump actions/upload-pages-artifact from 3 to 5 (#15)
+- chore(deps): bump DavidAnson/markdownlint-cli2-action from 19 to 23 (#11)
+- feat: signing scripts (#16)
+- fix: update gitnexus extension download_url to Jonas-Construction-Software repo
+- fix: point default catalog URLs to Jonas-Construction-Software/jonas-spec-kit
+- chore: bump version to 0.1.22 (#14)
+- fix: use RELEASE_PAT so tag push triggers release workflow
+
 ## [0.1.22] - 2026-04-07
 
 ### Changed
