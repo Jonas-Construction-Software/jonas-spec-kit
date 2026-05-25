@@ -20,11 +20,11 @@
     "gitnexus": {
       "name": "GitNexus Code Intelligence",
       "id": "gitnexus",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "Integrates GitNexus graph-based code intelligence into the Spec-Driven Development workflow.",
       "author": "spec-kit-core",
       "repository": "https://github.com/Jonas-Construction-Software/jonas-spec-kit",
-      "download_url": "https://github.com/Jonas-Construction-Software/jonas-spec-kit/releases/download/gitnexus-v1.0.0/gitnexus.zip",
+      "download_url": "https://github.com/Jonas-Construction-Software/jonas-spec-kit/releases/download/gitnexus-v1.1.0/gitnexus.zip",
       "tags": [
         "code-intelligence",
         "graph",

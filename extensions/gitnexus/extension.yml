@@ -3,7 +3,7 @@ schema_version: "1.0"
 extension:
   id: "gitnexus"
   name: "GitNexus Code Intelligence"
-  version: "1.0.0"
+  version: "1.1.0"
   description: "Integrates GitNexus graph-based code intelligence into the Spec-Driven Development workflow."
   author: "spec-kit-core"
   repository: "https://github.com/github/spec-kit"
